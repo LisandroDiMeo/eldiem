@@ -7,6 +7,8 @@ import Url.Parser exposing (Parser, (</>), int, map, oneOf, s, string, parse)
 import Html exposing (h1, text)
 import Components.Navbar exposing (navbar, NavbarTab)
 import Page.Home as Home
+import Page.About as About
+import Page.Posts as Posts
 import Html.Attributes exposing (..)
 
 -- MAIN
@@ -32,6 +34,8 @@ type alias Model =
 type Page 
     = Home Home.Model
     | NotFound
+    | About About.Model
+    | Posts Posts.Post
     -- | Other
 
 -- SUBSCRIPTIONS
@@ -47,10 +51,10 @@ view model = wrapperFor model.page
 
 navBarTabs : List (NavbarTab msg)
 navBarTabs = [
-        {title = "Home", imageResource = "image.png", onPressed = Nothing},
-        {title = "Posts", imageResource = "image.png", onPressed = Nothing},
-        {title = "About", imageResource = "image.png", onPressed = Nothing},
-        {title = "Other", imageResource = "image.png", onPressed = Nothing}
+        {title = "Home", imageResource = "finder.png", onPressed = Nothing},
+        {title = "Posts", imageResource = "floppydisk.png", onPressed = Nothing},
+        {title = "About", imageResource = "coffee.png", onPressed = Nothing},
+        {title = "Other", imageResource = "misc.png", onPressed = Nothing}
     ]
 
 header : Html.Html msg
@@ -61,6 +65,8 @@ wrapperFor page
     = case page of
         Home home -> Browser.Document "Home" ([header, Home.view home])
         NotFound -> Browser.Document "NotFound" ([header])
+        About about -> Browser.Document "About" ([header, About.view about])
+        Posts post -> Browser.Document "Post" ([header, Posts.view post])
 
 -- INIT
 
@@ -76,6 +82,9 @@ stepUrl url model =
     let parser = oneOf [
             route (s "Main.elm") (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
             , route (s "Home") (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
+            , route (s "About") (stepAbout model (About.init "About" About.aboutMe, Cmd.none))
+            , route (s "Posts" </> int) (\_ -> stepPost model (Posts.examplePost, Cmd.none))
+            , route (s "Posts") (stepPost model (Posts.examplePost, Cmd.none))
             ]
     in 
     case parse parser url of 
@@ -93,6 +102,8 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | HomeMsg Home.Msg
+    | AboutMsg About.Msg
+    | PostsMsg Posts.Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model = 
@@ -112,9 +123,24 @@ update message model =
                 Home home -> stepHome model (Home.update msg home)
                 _ -> (model, Cmd.none)
         
+        AboutMsg msg -> 
+            case model.page of 
+                About about -> stepAbout model (About.update msg about)
+                _ -> (model, Cmd.none)
+
+        PostsMsg msg -> 
+            case model.page of
+                Posts post -> stepPost model (Posts.update msg post)
+                _ -> (model, Cmd.none)
 
 stepHome : Model -> ( Home.Model, Cmd Home.Msg ) -> (Model, Cmd Msg)
 stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map HomeMsg cmds )
+
+stepAbout : Model -> ( About.Model, Cmd About.Msg ) -> (Model, Cmd Msg)
+stepAbout model (about, cmds) = ( { model | page = About about }, Cmd.map AboutMsg cmds )
+
+stepPost : Model -> ( Posts.Post, Cmd Posts.Msg ) -> (Model, Cmd Msg)
+stepPost model (post, cmds) = ( { model | page = Posts post }, Cmd.map PostsMsg cmds )
 
 -- ROUTER 
 

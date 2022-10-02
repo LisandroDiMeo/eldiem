@@ -18,7 +18,7 @@ type alias Model =
         latestsPosts : List (LatestPost)
     }
 
-type alias LatestPost = { title: String, shortText: String, thumbnailResource: String }
+type alias LatestPost = { title: String, shortText: String, thumbnailResource: String, id: Int }
 
 init : String -> List LatestPost -> Model
 init title latestsPosts = (Model title latestsPosts)
@@ -40,15 +40,14 @@ view model =
     let posts = List.map (\lp -> div [] [
                 h1 [] [text lp.title],
                 p [] [text lp.shortText],
-                img [src lp.thumbnailResource, width 64, height 64, style "display" "block", style "padding" "12px 14px"] []
+                img [src lp.thumbnailResource, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []
             ]) model.latestsPosts
     in 
-    div [] posts
+    div [style "padding" "12px 24px 12px 24px"] posts
 
 -- latests posts
 latestPosts : List LatestPost
 latestPosts = [
-        LatestPost "Welcome" "This is a testing post, nothing much to look here..." "lisa.jpeg",
-        LatestPost "Welcome" "This is a testing post, nothing much to look here..." "lisa.jpeg",
-        LatestPost "Welcome" "This is a testing post, nothing much to look here..." "lisa.jpeg"
+        LatestPost "Espresso is missing views" "Espresso may be lacking of information..." "espresso.png" 1,
+        LatestPost "Welcome" "This is a testing post, nothing much to look here..." "lisa.jpeg" 0
     ]
