@@ -6091,7 +6091,7 @@ var $author$project$Main$stepUrl = F2(
 						$elm$url$Url$Parser$slash,
 						$elm$url$Url$Parser$s('Posts'),
 						$elm$url$Url$Parser$int),
-					function (_v1) {
+					function (_v2) {
 						return A2(
 							$author$project$Main$stepPost,
 							model,
@@ -6105,8 +6105,21 @@ var $author$project$Main$stepUrl = F2(
 						model,
 						_Utils_Tuple2($author$project$Page$Posts$examplePost, $elm$core$Platform$Cmd$none)))
 				]));
+		var fakeUrl = _Utils_update(
+			url,
+			{
+				path: function () {
+					var _v1 = url.fragment;
+					if (_v1.$ === 'Just') {
+						var s = _v1.a;
+						return s;
+					} else {
+						return '';
+					}
+				}()
+			});
 		var dummy = A2($elm$core$Debug$log, 'Route', url);
-		var _v0 = A2($elm$url$Url$Parser$parse, parser, url);
+		var _v0 = A2($elm$url$Url$Parser$parse, parser, fakeUrl);
 		if (_v0.$ === 'Just') {
 			var answer = _v0.a;
 			return answer;
@@ -6357,7 +6370,7 @@ var $author$project$Components$Navbar$navbarTab = F2(
 					$elm$html$Html$a,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$href(tabInfo.title)
+							$elm$html$Html$Attributes$href('#/' + tabInfo.title)
 						]),
 					_List_fromArray(
 						[

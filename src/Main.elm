@@ -86,9 +86,13 @@ stepUrl url model =
             , route (s "Posts" </> int) (\_ -> stepPost model (Posts.examplePost, Cmd.none))
             , route (s "Posts") (stepPost model (Posts.examplePost, Cmd.none))
             ]
-        dummy = Debug.log "Route" url
+        fakeUrl = {
+                    url | path = case url.fragment of
+                        Just s -> s
+                        Nothing -> ""
+                }
     in 
-    case parse parser url of 
+    case parse parser fakeUrl of 
         Just answer -> answer
         Nothing -> ( { model | page = NotFound }, Cmd.none )
 
@@ -113,10 +117,7 @@ update message model =
         
         LinkClicked urlRequest -> 
             case urlRequest of 
-                Browser.Internal url -> 
-                    let fafa = Debug.log "Url:" url
-                    in
-                    (model, Nav.pushUrl model.key (Url.toString url))
+                Browser.Internal url -> (model, Nav.pushUrl model.key (Url.toString url))
 
                 Browser.External href -> (model, Nav.load href)
 
