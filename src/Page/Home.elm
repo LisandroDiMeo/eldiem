@@ -48,6 +48,6 @@ view model =
 -- latests posts
 latestPosts : List LatestPost
 latestPosts = [
-        LatestPost "Espresso is missing views" "Espresso may be lacking of information..." "espresso.png" 1,
-        LatestPost "Welcome" "This is a testing post, nothing much to look here..." "lisa.jpeg" 0
+        LatestPost "Espresso is missing views" "Espresso may be lacking of information..." "src/espresso.png" 1,
+        LatestPost "Welcome" "This is a testing post, nothing much to look here..." "src/lisa.jpeg" 0
     ]

@@ -24,8 +24,8 @@ navbar tabsInformation = nav [] [navbarContainer (foldr (\tabInfo navigationTabs
 navbarTab : List (Attribute msg) -> NavbarTab (msg) -> Html msg
 navbarTab attributes tabInfo = 
     let image = div [style "display" "inline-flex"] [
-                img [src ("assets/"++tabInfo.imageResource), width 32, height 32, style "display" "block", style "padding" "12px 14px"] [],
-                a [href tabInfo.title] [p [] [text tabInfo.title]]
+                img [src ("src/assets/"++tabInfo.imageResource), width 32, height 32, style "display" "block", style "padding" "12px 14px"] [],
+                a [href (tabInfo.title)] [p [] [text tabInfo.title]]
             ]
     in 
     case tabInfo.onPressed of

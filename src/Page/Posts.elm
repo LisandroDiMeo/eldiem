@@ -37,7 +37,7 @@ view post =
             h2 [] [text post.title],
             p [] [i [] [text post.summary]],
             p [] [text post.date]
-        ] ++ postBody ++ [ p [] [ img [src "assets/link.png", width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ])
+        ] ++ postBody ++ [ p [] [ img [src "src/assets/link.png", width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ])
 
 -- UPDATE 
 

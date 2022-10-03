@@ -80,12 +80,13 @@ init _ url key =
 stepUrl : Url.Url -> Model -> (Model, Cmd Msg)
 stepUrl url model =
     let parser = oneOf [
-            route (s "Main.elm") (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
+            route Url.Parser.top (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
             , route (s "Home") (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
             , route (s "About") (stepAbout model (About.init "About" About.aboutMe, Cmd.none))
             , route (s "Posts" </> int) (\_ -> stepPost model (Posts.examplePost, Cmd.none))
             , route (s "Posts") (stepPost model (Posts.examplePost, Cmd.none))
             ]
+        dummy = Debug.log "Route" url
     in 
     case parse parser url of 
         Just answer -> answer
@@ -112,7 +113,10 @@ update message model =
         
         LinkClicked urlRequest -> 
             case urlRequest of 
-                Browser.Internal url -> (model, Nav.pushUrl model.key (Url.toString url))
+                Browser.Internal url -> 
+                    let fafa = Debug.log "Url:" url
+                    in
+                    (model, Nav.pushUrl model.key (Url.toString url))
 
                 Browser.External href -> (model, Nav.load href)
 
