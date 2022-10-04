@@ -74,14 +74,14 @@ init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
   stepUrl url
     { key = key
-    , page = Home (Home.Model "Home" Home.latestPosts)
+    , page = Home (Home.Loading)
     }
     
 stepUrl : Url.Url -> Model -> (Model, Cmd Msg)
 stepUrl url model =
     let parser = oneOf [
-            route Url.Parser.top (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
-            , route (s "Home") (stepHome model (Home.init "Home" Home.latestPosts, Cmd.none))
+            route Url.Parser.top (stepHome model (Home.init ()))
+            , route (s "Home") (stepHome model (Home.init ()))
             , route (s "About") (stepAbout model (About.init "About" About.aboutMe, Cmd.none))
             , route (s "Posts" </> int) (\_ -> stepPost model (Posts.examplePost, Cmd.none))
             , route (s "Posts") (stepPost model (Posts.examplePost, Cmd.none))

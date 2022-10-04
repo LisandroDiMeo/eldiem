@@ -1,0 +1,9 @@
+{
+    "title": "Welcome",
+    "summary": "A surprise to be sure, but a welcome one.",
+    "content": ["Thanks for visiting my site. Here I'll try to share my work and stuff I consider interesting. ", "Elm is the language I chose to write this site 👨‍💻"], 
+    "date": "03/10/2022",
+    "id": 1,
+    "references": [],
+    "images": ["src/posts/images/001/elmlogo.png", -1]
+}

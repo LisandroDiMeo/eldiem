@@ -1,0 +1,6 @@
+{
+    "title" : "The Importance of Double Dispatch",
+    "shortText" : "A simple (but useful) technique to handle multiple polymorphism 🔀",
+    "thumbnailResource" : "src/posts/images/002/dhhingalls.jpg",
+    "id" : 2
+}
