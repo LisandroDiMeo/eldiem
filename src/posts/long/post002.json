@@ -1,9 +1,9 @@
 {
     "title": "The Importance of Double Dispatch",
     "summary": "Stop using instanceof, switch cases, and such to handle polymorphic situations.",
-    "content": ["Thanks for visiting my site. Here I'll try to share my work and stuff I consider interesting. "], 
+    "content": ["Work in progress!. ", "Dan Ingalls is one of the founders of OOP."], 
     "date": "03/10/2022",
     "id": 2,
     "references": [],
-    "images": ["src/posts/images/002/dhhingalls.jpg"]
+    "images": ["src/posts/images/002/dhhingalls.jpg", 0]
 }

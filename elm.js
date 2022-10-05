@@ -5362,15 +5362,7 @@ var $author$project$Main$Home = function (a) {
 };
 var $author$project$Page$Home$Loading = {$: 'Loading'};
 var $author$project$Main$NotFound = {$: 'NotFound'};
-var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Science at Faculty of Natural and Exacts Sciences, in Universidad de Buenos Aires.' + ('%Also I\'m beign part of a research internship in LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms.' + '%Additionaly I\'m working at Wolox part of Accenture as an Android Lead Developer.');
-var $author$project$Page$Posts$Post = F7(
-	function (title, summary, content, date, id, references, images) {
-		return {content: content, date: date, id: id, images: images, references: references, summary: summary, title: title};
-	});
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var $author$project$Page$Posts$examplePost = A7($author$project$Page$Posts$Post, 'Lipsum', 'Example', _List_Nil, '25/04/1999', -1, _List_Nil, _List_Nil);
+var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Sciences 🖥️ at FCEN,  Universidad de Buenos Aires.' + ('%Currently I\'m part of a research internship at LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms 🧬.' + ('%Additionaly I work at Wolox part of Accenture as an Android Lead Developer 🤖.' + '%Beyond that, I really like music 🎵 (I play the guitar), photography 📷, and nature ⛰️.'));
 var $author$project$Page$About$Model = F2(
 	function (title, content) {
 		return {content: content, title: title};
@@ -6196,6 +6188,64 @@ var $author$project$Page$Home$getLatestsPosts = $elm$http$Http$get(
 var $author$project$Page$Home$init = function (_v0) {
 	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestsPosts);
 };
+var $author$project$Page$Posts$Loading = {$: 'Loading'};
+var $author$project$Page$Posts$GotPostWithId = function (a) {
+	return {$: 'GotPostWithId', a: a};
+};
+var $author$project$Page$Posts$Post = F7(
+	function (title, summary, content, date, id, references, images) {
+		return {content: content, date: date, id: id, images: images, references: references, summary: summary, title: title};
+	});
+var $elm$json$Json$Decode$map7 = _Json_map7;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $author$project$Page$Posts$postDecoder = A8(
+	$elm$json$Json$Decode$map7,
+	$author$project$Page$Posts$Post,
+	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'summary', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'content',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+	A2($elm$json$Json$Decode$field, 'date', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
+	A2(
+		$elm$json$Json$Decode$field,
+		'references',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'images',
+		$elm$json$Json$Decode$list(
+			$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string))));
+var $author$project$Page$Posts$postIdToRealId = function (id) {
+	return function (rid) {
+		return ($elm$core$String$length(rid) < 3) ? _Utils_ap(
+			($elm$core$String$length(rid) === 1) ? '00' : '0',
+			rid) : rid;
+	}(
+		$elm$core$String$fromInt(id));
+};
+var $author$project$Page$Posts$getPostWithId = function (id) {
+	return $elm$http$Http$get(
+		{
+			expect: A2($elm$http$Http$expectJson, $author$project$Page$Posts$GotPostWithId, $author$project$Page$Posts$postDecoder),
+			url: 'src/posts/long/post' + ($author$project$Page$Posts$postIdToRealId(id) + '.json')
+		});
+};
+var $author$project$Page$Posts$init = function (id) {
+	return _Utils_Tuple2(
+		$author$project$Page$Posts$Loading,
+		$author$project$Page$Posts$getPostWithId(id));
+};
 var $elm$url$Url$Parser$Parser = function (a) {
 	return {$: 'Parser', a: a};
 };
@@ -6547,11 +6597,11 @@ var $author$project$Main$stepUrl = F2(
 						$elm$url$Url$Parser$slash,
 						$elm$url$Url$Parser$s('Posts'),
 						$elm$url$Url$Parser$int),
-					function (_v2) {
+					function (id) {
 						return A2(
 							$author$project$Main$stepPost,
 							model,
-							_Utils_Tuple2($author$project$Page$Posts$examplePost, $elm$core$Platform$Cmd$none));
+							$author$project$Page$Posts$init(id));
 					}),
 					A2(
 					$author$project$Main$route,
@@ -6559,7 +6609,7 @@ var $author$project$Main$stepUrl = F2(
 					A2(
 						$author$project$Main$stepPost,
 						model,
-						_Utils_Tuple2($author$project$Page$Posts$examplePost, $elm$core$Platform$Cmd$none)))
+						$author$project$Page$Posts$init(1)))
 				]));
 		var fakeUrl = _Utils_update(
 			url,
@@ -6671,9 +6721,25 @@ var $author$project$Page$Home$update = F2(
 			}
 		}
 	});
+var $author$project$Page$Posts$Failure = {$: 'Failure'};
+var $author$project$Page$Posts$Success = function (a) {
+	return {$: 'Success', a: a};
+};
 var $author$project$Page$Posts$update = F2(
-	function (msg, post) {
-		return _Utils_Tuple2(post, $elm$core$Platform$Cmd$none);
+	function (msg, model) {
+		if (msg.$ === 'OnShareButtonPressed') {
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+		} else {
+			var result = msg.a;
+			if (result.$ === 'Ok') {
+				var post = result.a;
+				return _Utils_Tuple2(
+					$author$project$Page$Posts$Success(post),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
+			}
+		}
 	});
 var $author$project$Main$update = F2(
 	function (message, model) {
@@ -6741,6 +6807,115 @@ var $elm$browser$Browser$Document = F2(
 	function (title, body) {
 		return {body: body, title: title};
 	});
+var $elm$html$Html$br = _VirtualDom_node('br');
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$footer = _VirtualDom_node('footer');
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$img = _VirtualDom_node('img');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
+var $author$project$Components$Footer$github = A2(
+	$elm$html$Html$a,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$href('https://github.com/lisandroDiMeo/'),
+			$elm$html$Html$Attributes$target('_blank')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$img,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$src('src/assets/pxgithub.png'),
+					$elm$html$Html$Attributes$class('github-icon')
+				]),
+			_List_Nil)
+		]));
+var $author$project$Components$Footer$linkedin = A2(
+	$elm$html$Html$a,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$href('https://www.linkedin.com/in/lisandrodimeo/'),
+			$elm$html$Html$Attributes$target('_blank')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$img,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$src('src/assets/pxlinkedin.png'),
+					$elm$html$Html$Attributes$class('linkedin-icon')
+				]),
+			_List_Nil)
+		]));
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$small = _VirtualDom_node('small');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Components$Footer$footer = A2(
+	$elm$html$Html$footer,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('content-padding')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('footer-icons')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Find me at: ')
+								])),
+							$author$project$Components$Footer$github,
+							$author$project$Components$Footer$linkedin
+						])),
+					A2($elm$html$Html$br, _List_Nil, _List_Nil),
+					A2($elm$html$Html$br, _List_Nil, _List_Nil),
+					A2(
+					$elm$html$Html$small,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('No rights reserved, just be aware that identity theft is not a joke, millions of families suffer it every year. ')
+						]))
+				]))
+		]));
 var $author$project$Main$navBarTabs = _List_fromArray(
 	[
 		{imageResource: 'finder.png', onPressed: $elm$core$Maybe$Nothing, title: 'Home'},
@@ -6758,29 +6933,12 @@ var $author$project$Components$Navbar$ulStyle = _List_fromArray(
 		A2($elm$html$Html$Attributes$style, 'overflow', 'hidden')
 	]);
 var $author$project$Components$Navbar$navbarContainer = $elm$html$Html$ul($author$project$Components$Navbar$ulStyle);
-var $elm$html$Html$a = _VirtualDom_node('a');
-var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$Attributes$height = function (n) {
 	return A2(
 		_VirtualDom_attribute,
 		'height',
 		$elm$core$String$fromInt(n));
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
-var $elm$html$Html$img = _VirtualDom_node('img');
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -6799,15 +6957,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$html$Html$p = _VirtualDom_node('p');
-var $elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
-};
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$width = function (n) {
 	return A2(
 		_VirtualDom_attribute,
@@ -6898,6 +7047,7 @@ var $author$project$Components$Navbar$navbar = function (tabsInformation) {
 			]));
 };
 var $author$project$Main$header = $author$project$Components$Navbar$navbar($author$project$Main$navBarTabs);
+var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Page$About$parseAbout = function (rawAboutMe) {
 	var l = A2($elm$core$String$split, '%', rawAboutMe);
@@ -6933,8 +7083,26 @@ var $author$project$Page$About$view = function (model) {
 				A2(
 				$elm$html$Html$div,
 				_List_Nil,
-				$author$project$Page$About$parseAbout(model.content))
+				$author$project$Page$About$parseAbout(model.content)),
+				A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$img,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$src('src/assets/me.jpg'),
+								A2($elm$html$Html$Attributes$style, 'width', '512px'),
+								$elm$html$Html$Attributes$alt('Thats me in Bariloche :)')
+							]),
+						_List_Nil)
+					]))
 			]));
+};
+var $elm$core$Basics$negate = function (n) {
+	return -n;
 };
 var $elm$core$List$sortBy = _List_sortBy;
 var $author$project$Page$Home$orderPosts = $elm$core$List$sortBy(
@@ -6980,7 +7148,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 								_List_Nil,
 								_List_fromArray(
 									[
-										$elm$html$Html$text(lp.title)
+										$elm$html$Html$text('-> ' + lp.title)
 									])),
 								A2(
 								$elm$html$Html$p,
@@ -7024,12 +7192,11 @@ var $author$project$Commons$Zip$zip = F2(
 	function (l1, l2) {
 		return A3($elm$core$List$map2, $elm$core$Tuple$pair, l1, l2);
 	});
-var $author$project$Page$Posts$view = function (post) {
-	var postBody = A2(
-		$elm$core$List$map,
-		function (_v0) {
-			var content = _v0.a;
-			var image = _v0.b;
+var $author$project$Page$Posts$viewPost = function (model) {
+	var postBody = $elm$core$List$map(
+		function (_v1) {
+			var content = _v1.a;
+			var image = _v1.b;
 			if (image.$ === 'Nothing') {
 				return A2(
 					$elm$html$Html$p,
@@ -7065,67 +7232,96 @@ var $author$project$Page$Posts$view = function (post) {
 							_List_Nil)
 						]));
 			}
-		},
-		A2($author$project$Commons$Zip$zip, post.content, post.images));
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
-			]),
-		_Utils_ap(
-			_List_fromArray(
+		});
+	switch (model.$) {
+		case 'Failure':
+			return _List_fromArray(
 				[
 					A2(
-					$elm$html$Html$h2,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(post.title)
-						])),
-					A2(
 					$elm$html$Html$p,
 					_List_Nil,
 					_List_fromArray(
 						[
-							A2(
-							$elm$html$Html$i,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.summary)
-								]))
-						])),
-					A2(
-					$elm$html$Html$p,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(post.date)
+							$elm$html$Html$text('That post doesn\'t exist!🤯')
 						]))
-				]),
-			_Utils_ap(
-				postBody,
+				]);
+		case 'Loading':
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Loading... 🔄')
+						]))
+				]);
+		default:
+			var post = model.a;
+			return _Utils_ap(
 				_List_fromArray(
 					[
+						A2(
+						$elm$html$Html$h2,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(post.title)
+							])),
 						A2(
 						$elm$html$Html$p,
 						_List_Nil,
 						_List_fromArray(
 							[
 								A2(
-								$elm$html$Html$img,
+								$elm$html$Html$i,
+								_List_Nil,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$src('src/assets/link.png'),
-										$elm$html$Html$Attributes$width(16),
-										$elm$html$Html$Attributes$height(16),
-										A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-									]),
-								_List_Nil),
-								$elm$html$Html$text('Share it!')
+										$elm$html$Html$text(post.summary)
+									]))
+							])),
+						A2(
+						$elm$html$Html$p,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(post.date)
 							]))
-					]))));
+					]),
+				_Utils_ap(
+					postBody(
+						A2($author$project$Commons$Zip$zip, post.content, post.images)),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$img,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$src('src/assets/link.png'),
+											$elm$html$Html$Attributes$width(16),
+											$elm$html$Html$Attributes$height(16),
+											A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
+										]),
+									_List_Nil),
+									$elm$html$Html$text('Share it!')
+								]))
+						])));
+	}
+};
+var $author$project$Page$Posts$view = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
+			]),
+		$author$project$Page$Posts$viewPost(model));
 };
 var $author$project$Main$wrapperFor = function (page) {
 	switch (page.$) {
@@ -7137,7 +7333,8 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$Home$view(home)
+						$author$project$Page$Home$view(home),
+						$author$project$Components$Footer$footer
 					]));
 		case 'NotFound':
 			return A2(

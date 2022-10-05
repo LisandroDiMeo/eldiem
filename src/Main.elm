@@ -6,6 +6,7 @@ import Url
 import Url.Parser exposing (Parser, (</>), int, map, oneOf, s, string, parse)
 import Html exposing (h1, text)
 import Components.Navbar exposing (navbar, NavbarTab)
+import Components.Footer exposing (footer)
 import Page.Home as Home
 import Page.About as About
 import Page.Posts as Posts
@@ -35,7 +36,7 @@ type Page
     = Home Home.Model
     | NotFound
     | About About.Model
-    | Posts Posts.Post
+    | Posts Posts.Model
     -- | Other
 
 -- SUBSCRIPTIONS
@@ -63,7 +64,7 @@ header = navbar navBarTabs
 wrapperFor : Page -> Browser.Document Msg
 wrapperFor page 
     = case page of
-        Home home -> Browser.Document "Home" ([header, Home.view home])
+        Home home -> Browser.Document "Home" ([header, Home.view home, footer])
         NotFound -> Browser.Document "NotFound" ([header])
         About about -> Browser.Document "About" ([header, About.view about])
         Posts post -> Browser.Document "Post" ([header, Posts.view post])
@@ -83,8 +84,8 @@ stepUrl url model =
             route Url.Parser.top (stepHome model (Home.init ()))
             , route (s "Home") (stepHome model (Home.init ()))
             , route (s "About") (stepAbout model (About.init "About" About.aboutMe, Cmd.none))
-            , route (s "Posts" </> int) (\_ -> stepPost model (Posts.examplePost, Cmd.none))
-            , route (s "Posts") (stepPost model (Posts.examplePost, Cmd.none))
+            , route (s "Posts" </> int) (\id -> stepPost model (Posts.init (id)))
+            , route (s "Posts") (stepPost model (Posts.init (1)))
             ]
         fakeUrl = {
                     url | path = case url.fragment of
@@ -144,7 +145,7 @@ stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map HomeMsg cmds
 stepAbout : Model -> ( About.Model, Cmd About.Msg ) -> (Model, Cmd Msg)
 stepAbout model (about, cmds) = ( { model | page = About about }, Cmd.map AboutMsg cmds )
 
-stepPost : Model -> ( Posts.Post, Cmd Posts.Msg ) -> (Model, Cmd Msg)
+stepPost : Model -> ( Posts.Model, Cmd Posts.Msg ) -> (Model, Cmd Msg)
 stepPost model (post, cmds) = ( { model | page = Posts post }, Cmd.map PostsMsg cmds )
 
 -- ROUTER 
