@@ -1,7 +1,16 @@
-* {
-    font-family: monospace;
-    letter-spacing: .2rem;
+@font-face {
+    font-family: 'FiraCode';
+    src: url('../src/assets/fira/FiraCode-VariableFont_wght.ttf');
+    font-weight: normal;
+    font-style: normal;
 }
+
+* {
+    font-family: 'FiraCode', monospace;
+    letter-spacing: .1rem;
+    background-color: #15202B;
+    color: #fff;
+}   
 
 a{
     height: 100%;

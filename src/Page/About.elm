@@ -26,7 +26,7 @@ update _ model = (model, Cmd.none)
 view : Model -> Html msg
 view model = 
     div [ style "padding" "12px 24px 12px 24px" ] [
-            h1 [] [text model.title],
+            h1 [] [text "About me"],
             div [] (parseAbout model.content)
         ]
 

@@ -6184,10 +6184,14 @@ var $author$project$Page$Home$latestPostDecoder = A5(
 	A2($elm$json$Json$Decode$field, 'shortText', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'thumbnailResource', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int));
+var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Page$Home$getLatestsPosts = $elm$http$Http$get(
 	{
-		expect: A2($elm$http$Http$expectJson, $author$project$Page$Home$GotLatestsPosts, $author$project$Page$Home$latestPostDecoder),
-		url: 'src/posts/short/post001.json'
+		expect: A2(
+			$elm$http$Http$expectJson,
+			$author$project$Page$Home$GotLatestsPosts,
+			$elm$json$Json$Decode$list($author$project$Page$Home$latestPostDecoder)),
+		url: 'src/posts/short/short_posts.json'
 	});
 var $author$project$Page$Home$init = function (_v0) {
 	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestsPosts);
@@ -6660,9 +6664,7 @@ var $author$project$Page$Home$update = F2(
 			if (result.$ === 'Ok') {
 				var lp = result.a;
 				return _Utils_Tuple2(
-					$author$project$Page$Home$Success(
-						_List_fromArray(
-							[lp])),
+					$author$project$Page$Home$Success(lp),
 					$elm$core$Platform$Cmd$none);
 			} else {
 				return _Utils_Tuple2($author$project$Page$Home$Failure, $elm$core$Platform$Cmd$none);
@@ -6926,7 +6928,7 @@ var $author$project$Page$About$view = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text(model.title)
+						$elm$html$Html$text('About me')
 					])),
 				A2(
 				$elm$html$Html$div,
@@ -6934,6 +6936,11 @@ var $author$project$Page$About$view = function (model) {
 				$author$project$Page$About$parseAbout(model.content))
 			]));
 };
+var $elm$core$List$sortBy = _List_sortBy;
+var $author$project$Page$Home$orderPosts = $elm$core$List$sortBy(
+	function (p) {
+		return (-1) * p.id;
+	});
 var $author$project$Page$Home$viewLatestsPosts = function (model) {
 	switch (model.$) {
 		case 'Failure':
@@ -6944,7 +6951,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text('No anda wey')
+							$elm$html$Html$text('Posts not found 😞')
 						]))
 				]);
 		case 'Loading':
@@ -6955,7 +6962,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text('loading...')
+							$elm$html$Html$text('Loading... 🔄')
 						]))
 				]);
 		default:
@@ -6995,7 +7002,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 								_List_Nil)
 							]));
 				},
-				latestposts);
+				$author$project$Page$Home$orderPosts(latestposts));
 	}
 };
 var $author$project$Page$Home$view = function (model) {

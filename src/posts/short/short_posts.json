@@ -1,0 +1,14 @@
+[
+    {
+        "title" : "Welcome",
+        "shortText" : "Nothing much to look here, just a warm welcome 🙋",
+        "thumbnailResource" : "src/posts/images/001/elmlogo.png",
+        "id" : 1
+    },
+    {
+        "title" : "The Importance of Double Dispatch",
+        "shortText" : "A simple (but useful) technique to handle multiple polymorphism 🔀",
+        "thumbnailResource" : "src/posts/images/002/dhhingalls.jpg",
+        "id" : 2
+    }
+]
