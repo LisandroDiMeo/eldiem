@@ -65,9 +65,9 @@ wrapperFor : Page -> Browser.Document Msg
 wrapperFor page 
     = case page of
         Home home -> Browser.Document "Home" ([header, Home.view home, footer])
-        NotFound -> Browser.Document "NotFound" ([header])
-        About about -> Browser.Document "About" ([header, About.view about])
-        Posts post -> Browser.Document "Post" ([header, Posts.view post])
+        NotFound -> Browser.Document "NotFound" ([header, footer])
+        About about -> Browser.Document "About" ([header, About.view about, footer])
+        Posts post -> Browser.Document "Post" ([header, Posts.view post, footer])
 
 -- INIT
 

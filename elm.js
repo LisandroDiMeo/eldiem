@@ -7341,7 +7341,7 @@ var $author$project$Main$wrapperFor = function (page) {
 				$elm$browser$Browser$Document,
 				'NotFound',
 				_List_fromArray(
-					[$author$project$Main$header]));
+					[$author$project$Main$header, $author$project$Components$Footer$footer]));
 		case 'About':
 			var about = page.a;
 			return A2(
@@ -7350,7 +7350,8 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$About$view(about)
+						$author$project$Page$About$view(about),
+						$author$project$Components$Footer$footer
 					]));
 		default:
 			var post = page.a;
@@ -7360,7 +7361,8 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$Posts$view(post)
+						$author$project$Page$Posts$view(post),
+						$author$project$Components$Footer$footer
 					]));
 	}
 };
