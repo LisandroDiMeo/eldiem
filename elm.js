@@ -4372,6 +4372,181 @@ function _Browser_load(url)
 }
 
 
+
+// SEND REQUEST
+
+var _Http_toTask = F3(function(router, toTask, request)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		function done(response) {
+			callback(toTask(request.expect.a(response)));
+		}
+
+		var xhr = new XMLHttpRequest();
+		xhr.addEventListener('error', function() { done($elm$http$Http$NetworkError_); });
+		xhr.addEventListener('timeout', function() { done($elm$http$Http$Timeout_); });
+		xhr.addEventListener('load', function() { done(_Http_toResponse(request.expect.b, xhr)); });
+		$elm$core$Maybe$isJust(request.tracker) && _Http_track(router, xhr, request.tracker.a);
+
+		try {
+			xhr.open(request.method, request.url, true);
+		} catch (e) {
+			return done($elm$http$Http$BadUrl_(request.url));
+		}
+
+		_Http_configureRequest(xhr, request);
+
+		request.body.a && xhr.setRequestHeader('Content-Type', request.body.a);
+		xhr.send(request.body.b);
+
+		return function() { xhr.c = true; xhr.abort(); };
+	});
+});
+
+
+// CONFIGURE
+
+function _Http_configureRequest(xhr, request)
+{
+	for (var headers = request.headers; headers.b; headers = headers.b) // WHILE_CONS
+	{
+		xhr.setRequestHeader(headers.a.a, headers.a.b);
+	}
+	xhr.timeout = request.timeout.a || 0;
+	xhr.responseType = request.expect.d;
+	xhr.withCredentials = request.allowCookiesFromOtherDomains;
+}
+
+
+// RESPONSES
+
+function _Http_toResponse(toBody, xhr)
+{
+	return A2(
+		200 <= xhr.status && xhr.status < 300 ? $elm$http$Http$GoodStatus_ : $elm$http$Http$BadStatus_,
+		_Http_toMetadata(xhr),
+		toBody(xhr.response)
+	);
+}
+
+
+// METADATA
+
+function _Http_toMetadata(xhr)
+{
+	return {
+		url: xhr.responseURL,
+		statusCode: xhr.status,
+		statusText: xhr.statusText,
+		headers: _Http_parseHeaders(xhr.getAllResponseHeaders())
+	};
+}
+
+
+// HEADERS
+
+function _Http_parseHeaders(rawHeaders)
+{
+	if (!rawHeaders)
+	{
+		return $elm$core$Dict$empty;
+	}
+
+	var headers = $elm$core$Dict$empty;
+	var headerPairs = rawHeaders.split('\r\n');
+	for (var i = headerPairs.length; i--; )
+	{
+		var headerPair = headerPairs[i];
+		var index = headerPair.indexOf(': ');
+		if (index > 0)
+		{
+			var key = headerPair.substring(0, index);
+			var value = headerPair.substring(index + 2);
+
+			headers = A3($elm$core$Dict$update, key, function(oldValue) {
+				return $elm$core$Maybe$Just($elm$core$Maybe$isJust(oldValue)
+					? value + ', ' + oldValue.a
+					: value
+				);
+			}, headers);
+		}
+	}
+	return headers;
+}
+
+
+// EXPECT
+
+var _Http_expect = F3(function(type, toBody, toValue)
+{
+	return {
+		$: 0,
+		d: type,
+		b: toBody,
+		a: toValue
+	};
+});
+
+var _Http_mapExpect = F2(function(func, expect)
+{
+	return {
+		$: 0,
+		d: expect.d,
+		b: expect.b,
+		a: function(x) { return func(expect.a(x)); }
+	};
+});
+
+function _Http_toDataView(arrayBuffer)
+{
+	return new DataView(arrayBuffer);
+}
+
+
+// BODY and PARTS
+
+var _Http_emptyBody = { $: 0 };
+var _Http_pair = F2(function(a, b) { return { $: 0, a: a, b: b }; });
+
+function _Http_toFormData(parts)
+{
+	for (var formData = new FormData(); parts.b; parts = parts.b) // WHILE_CONS
+	{
+		var part = parts.a;
+		formData.append(part.a, part.b);
+	}
+	return formData;
+}
+
+var _Http_bytesToBlob = F2(function(mime, bytes)
+{
+	return new Blob([bytes], { type: mime });
+});
+
+
+// PROGRESS
+
+function _Http_track(router, xhr, tracker)
+{
+	// TODO check out lengthComputable on loadstart event
+
+	xhr.upload.addEventListener('progress', function(event) {
+		if (xhr.c) { return; }
+		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Sending({
+			sent: event.loaded,
+			size: event.total
+		}))));
+	});
+	xhr.addEventListener('progress', function(event) {
+		if (xhr.c) { return; }
+		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Receiving({
+			received: event.loaded,
+			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
+		}))));
+	});
+}
+
 function _Url_percentEncode(string)
 {
 	return encodeURIComponent(string);
@@ -5185,29 +5360,9 @@ var $elm$browser$Browser$application = _Browser_application;
 var $author$project$Main$Home = function (a) {
 	return {$: 'Home', a: a};
 };
-var $author$project$Page$Home$Model = F2(
-	function (title, latestsPosts) {
-		return {latestsPosts: latestsPosts, title: title};
-	});
-var $author$project$Page$Home$LatestPost = F4(
-	function (title, shortText, thumbnailResource, id) {
-		return {id: id, shortText: shortText, thumbnailResource: thumbnailResource, title: title};
-	});
-var $author$project$Page$Home$latestPosts = _List_fromArray(
-	[
-		A4($author$project$Page$Home$LatestPost, 'Espresso is missing views', 'Espresso may be lacking of information...', 'src/espresso.png', 1),
-		A4($author$project$Page$Home$LatestPost, 'Welcome', 'This is a testing post, nothing much to look here...', 'src/lisa.jpeg', 0)
-	]);
+var $author$project$Page$Home$Loading = {$: 'Loading'};
 var $author$project$Main$NotFound = {$: 'NotFound'};
-var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Science at Faculty of Natural and Exacts Sciences, in Universidad de Buenos Aires.' + ('%Also I\'m beign part of a research internship in LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms.' + '%Additionaly I\'m working at Wolox part of Accenture as an Android Lead Developer.');
-var $author$project$Page$Posts$Post = F7(
-	function (title, summary, content, date, id, references, images) {
-		return {content: content, date: date, id: id, images: images, references: references, summary: summary, title: title};
-	});
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var $author$project$Page$Posts$examplePost = A7($author$project$Page$Posts$Post, 'Lipsum', 'Example', _List_Nil, '25/04/1999', -1, _List_Nil, _List_Nil);
+var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Sciences 🖥️ at FCEN,  Universidad de Buenos Aires.' + ('%Currently I\'m part of a research internship at LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms 🧬.' + ('%Additionaly I work at Wolox part of Accenture as an Android Lead Developer 🤖.' + '%Beyond that, I really like music 🎵 (I play the guitar), photography 📷, and nature ⛰️.'));
 var $author$project$Page$About$Model = F2(
 	function (title, content) {
 		return {content: content, title: title};
@@ -5216,144 +5371,39 @@ var $author$project$Page$About$init = F2(
 	function (title, content) {
 		return A2($author$project$Page$About$Model, title, content);
 	});
-var $author$project$Page$Home$init = F2(
-	function (title, latestsPosts) {
-		return A2($author$project$Page$Home$Model, title, latestsPosts);
-	});
-var $elm$url$Url$Parser$Parser = function (a) {
-	return {$: 'Parser', a: a};
+var $author$project$Page$Home$GotLatestsPosts = function (a) {
+	return {$: 'GotLatestsPosts', a: a};
 };
-var $elm$url$Url$Parser$State = F5(
-	function (visited, unvisited, params, frag, value) {
-		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $elm$http$Http$BadStatus_ = F2(
+	function (a, b) {
+		return {$: 'BadStatus_', a: a, b: b};
 	});
-var $elm$url$Url$Parser$custom = F2(
-	function (tipe, stringToSomething) {
-		return $elm$url$Url$Parser$Parser(
-			function (_v0) {
-				var visited = _v0.visited;
-				var unvisited = _v0.unvisited;
-				var params = _v0.params;
-				var frag = _v0.frag;
-				var value = _v0.value;
-				if (!unvisited.b) {
-					return _List_Nil;
-				} else {
-					var next = unvisited.a;
-					var rest = unvisited.b;
-					var _v2 = stringToSomething(next);
-					if (_v2.$ === 'Just') {
-						var nextValue = _v2.a;
-						return _List_fromArray(
-							[
-								A5(
-								$elm$url$Url$Parser$State,
-								A2($elm$core$List$cons, next, visited),
-								rest,
-								params,
-								frag,
-								value(nextValue))
-							]);
-					} else {
-						return _List_Nil;
-					}
-				}
-			});
-	});
-var $elm$url$Url$Parser$int = A2($elm$url$Url$Parser$custom, 'NUMBER', $elm$core$String$toInt);
-var $elm$core$Debug$log = _Debug_log;
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
-		}
-	});
-var $elm$core$List$concat = function (lists) {
-	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+var $elm$http$Http$BadUrl_ = function (a) {
+	return {$: 'BadUrl_', a: a};
 };
-var $elm$core$List$concatMap = F2(
-	function (f, list) {
-		return $elm$core$List$concat(
-			A2($elm$core$List$map, f, list));
+var $elm$http$Http$GoodStatus_ = F2(
+	function (a, b) {
+		return {$: 'GoodStatus_', a: a, b: b};
 	});
-var $elm$url$Url$Parser$oneOf = function (parsers) {
-	return $elm$url$Url$Parser$Parser(
-		function (state) {
-			return A2(
-				$elm$core$List$concatMap,
-				function (_v0) {
-					var parser = _v0.a;
-					return parser(state);
-				},
-				parsers);
-		});
+var $elm$http$Http$NetworkError_ = {$: 'NetworkError_'};
+var $elm$http$Http$Receiving = function (a) {
+	return {$: 'Receiving', a: a};
 };
-var $elm$url$Url$Parser$getFirstMatch = function (states) {
-	getFirstMatch:
-	while (true) {
-		if (!states.b) {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var state = states.a;
-			var rest = states.b;
-			var _v1 = state.unvisited;
-			if (!_v1.b) {
-				return $elm$core$Maybe$Just(state.value);
-			} else {
-				if ((_v1.a === '') && (!_v1.b.b)) {
-					return $elm$core$Maybe$Just(state.value);
-				} else {
-					var $temp$states = rest;
-					states = $temp$states;
-					continue getFirstMatch;
-				}
-			}
-		}
-	}
+var $elm$http$Http$Sending = function (a) {
+	return {$: 'Sending', a: a};
 };
-var $elm$url$Url$Parser$removeFinalEmpty = function (segments) {
-	if (!segments.b) {
-		return _List_Nil;
+var $elm$http$Http$Timeout_ = {$: 'Timeout_'};
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+var $elm$core$Maybe$isJust = function (maybe) {
+	if (maybe.$ === 'Just') {
+		return true;
 	} else {
-		if ((segments.a === '') && (!segments.b.b)) {
-			return _List_Nil;
-		} else {
-			var segment = segments.a;
-			var rest = segments.b;
-			return A2(
-				$elm$core$List$cons,
-				segment,
-				$elm$url$Url$Parser$removeFinalEmpty(rest));
-		}
+		return false;
 	}
 };
-var $elm$url$Url$Parser$preparePath = function (path) {
-	var _v0 = A2($elm$core$String$split, '/', path);
-	if (_v0.b && (_v0.a === '')) {
-		var segments = _v0.b;
-		return $elm$url$Url$Parser$removeFinalEmpty(segments);
-	} else {
-		var segments = _v0;
-		return $elm$url$Url$Parser$removeFinalEmpty(segments);
-	}
-};
-var $elm$url$Url$Parser$addToParametersHelp = F2(
-	function (value, maybeList) {
-		if (maybeList.$ === 'Nothing') {
-			return $elm$core$Maybe$Just(
-				_List_fromArray(
-					[value]));
-		} else {
-			var list = maybeList.a;
-			return $elm$core$Maybe$Just(
-				A2($elm$core$List$cons, value, list));
-		}
-	});
-var $elm$url$Url$percentDecode = _Url_percentDecode;
+var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var $elm$core$Basics$compare = _Utils_compare;
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -5391,7 +5441,6 @@ var $elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
 		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
 	});
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$Red = {$: 'Red'};
 var $elm$core$Dict$balance = F5(
 	function (color, key, value, left, right) {
@@ -5868,6 +5917,468 @@ var $elm$core$Dict$update = F3(
 			return A2($elm$core$Dict$remove, targetKey, dictionary);
 		}
 	});
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var $elm$http$Http$expectStringResponse = F2(
+	function (toMsg, toResult) {
+		return A3(
+			_Http_expect,
+			'',
+			$elm$core$Basics$identity,
+			A2($elm$core$Basics$composeR, toResult, toMsg));
+	});
+var $elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return $elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return $elm$core$Result$Err(
+				f(e));
+		}
+	});
+var $elm$http$Http$BadBody = function (a) {
+	return {$: 'BadBody', a: a};
+};
+var $elm$http$Http$BadStatus = function (a) {
+	return {$: 'BadStatus', a: a};
+};
+var $elm$http$Http$BadUrl = function (a) {
+	return {$: 'BadUrl', a: a};
+};
+var $elm$http$Http$NetworkError = {$: 'NetworkError'};
+var $elm$http$Http$Timeout = {$: 'Timeout'};
+var $elm$http$Http$resolve = F2(
+	function (toResult, response) {
+		switch (response.$) {
+			case 'BadUrl_':
+				var url = response.a;
+				return $elm$core$Result$Err(
+					$elm$http$Http$BadUrl(url));
+			case 'Timeout_':
+				return $elm$core$Result$Err($elm$http$Http$Timeout);
+			case 'NetworkError_':
+				return $elm$core$Result$Err($elm$http$Http$NetworkError);
+			case 'BadStatus_':
+				var metadata = response.a;
+				return $elm$core$Result$Err(
+					$elm$http$Http$BadStatus(metadata.statusCode));
+			default:
+				var body = response.b;
+				return A2(
+					$elm$core$Result$mapError,
+					$elm$http$Http$BadBody,
+					toResult(body));
+		}
+	});
+var $elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			$elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						$elm$core$Result$mapError,
+						$elm$json$Json$Decode$errorToString,
+						A2($elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var $elm$http$Http$emptyBody = _Http_emptyBody;
+var $elm$http$Http$Request = function (a) {
+	return {$: 'Request', a: a};
+};
+var $elm$http$Http$State = F2(
+	function (reqs, subs) {
+		return {reqs: reqs, subs: subs};
+	});
+var $elm$http$Http$init = $elm$core$Task$succeed(
+	A2($elm$http$Http$State, $elm$core$Dict$empty, _List_Nil));
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$http$Http$updateReqs = F3(
+	function (router, cmds, reqs) {
+		updateReqs:
+		while (true) {
+			if (!cmds.b) {
+				return $elm$core$Task$succeed(reqs);
+			} else {
+				var cmd = cmds.a;
+				var otherCmds = cmds.b;
+				if (cmd.$ === 'Cancel') {
+					var tracker = cmd.a;
+					var _v2 = A2($elm$core$Dict$get, tracker, reqs);
+					if (_v2.$ === 'Nothing') {
+						var $temp$router = router,
+							$temp$cmds = otherCmds,
+							$temp$reqs = reqs;
+						router = $temp$router;
+						cmds = $temp$cmds;
+						reqs = $temp$reqs;
+						continue updateReqs;
+					} else {
+						var pid = _v2.a;
+						return A2(
+							$elm$core$Task$andThen,
+							function (_v3) {
+								return A3(
+									$elm$http$Http$updateReqs,
+									router,
+									otherCmds,
+									A2($elm$core$Dict$remove, tracker, reqs));
+							},
+							$elm$core$Process$kill(pid));
+					}
+				} else {
+					var req = cmd.a;
+					return A2(
+						$elm$core$Task$andThen,
+						function (pid) {
+							var _v4 = req.tracker;
+							if (_v4.$ === 'Nothing') {
+								return A3($elm$http$Http$updateReqs, router, otherCmds, reqs);
+							} else {
+								var tracker = _v4.a;
+								return A3(
+									$elm$http$Http$updateReqs,
+									router,
+									otherCmds,
+									A3($elm$core$Dict$insert, tracker, pid, reqs));
+							}
+						},
+						$elm$core$Process$spawn(
+							A3(
+								_Http_toTask,
+								router,
+								$elm$core$Platform$sendToApp(router),
+								req)));
+				}
+			}
+		}
+	});
+var $elm$http$Http$onEffects = F4(
+	function (router, cmds, subs, state) {
+		return A2(
+			$elm$core$Task$andThen,
+			function (reqs) {
+				return $elm$core$Task$succeed(
+					A2($elm$http$Http$State, reqs, subs));
+			},
+			A3($elm$http$Http$updateReqs, router, cmds, state.reqs));
+	});
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var $elm$http$Http$maybeSend = F4(
+	function (router, desiredTracker, progress, _v0) {
+		var actualTracker = _v0.a;
+		var toMsg = _v0.b;
+		return _Utils_eq(desiredTracker, actualTracker) ? $elm$core$Maybe$Just(
+			A2(
+				$elm$core$Platform$sendToApp,
+				router,
+				toMsg(progress))) : $elm$core$Maybe$Nothing;
+	});
+var $elm$http$Http$onSelfMsg = F3(
+	function (router, _v0, state) {
+		var tracker = _v0.a;
+		var progress = _v0.b;
+		return A2(
+			$elm$core$Task$andThen,
+			function (_v1) {
+				return $elm$core$Task$succeed(state);
+			},
+			$elm$core$Task$sequence(
+				A2(
+					$elm$core$List$filterMap,
+					A3($elm$http$Http$maybeSend, router, tracker, progress),
+					state.subs)));
+	});
+var $elm$http$Http$Cancel = function (a) {
+	return {$: 'Cancel', a: a};
+};
+var $elm$http$Http$cmdMap = F2(
+	function (func, cmd) {
+		if (cmd.$ === 'Cancel') {
+			var tracker = cmd.a;
+			return $elm$http$Http$Cancel(tracker);
+		} else {
+			var r = cmd.a;
+			return $elm$http$Http$Request(
+				{
+					allowCookiesFromOtherDomains: r.allowCookiesFromOtherDomains,
+					body: r.body,
+					expect: A2(_Http_mapExpect, func, r.expect),
+					headers: r.headers,
+					method: r.method,
+					timeout: r.timeout,
+					tracker: r.tracker,
+					url: r.url
+				});
+		}
+	});
+var $elm$http$Http$MySub = F2(
+	function (a, b) {
+		return {$: 'MySub', a: a, b: b};
+	});
+var $elm$http$Http$subMap = F2(
+	function (func, _v0) {
+		var tracker = _v0.a;
+		var toMsg = _v0.b;
+		return A2(
+			$elm$http$Http$MySub,
+			tracker,
+			A2($elm$core$Basics$composeR, toMsg, func));
+	});
+_Platform_effectManagers['Http'] = _Platform_createManager($elm$http$Http$init, $elm$http$Http$onEffects, $elm$http$Http$onSelfMsg, $elm$http$Http$cmdMap, $elm$http$Http$subMap);
+var $elm$http$Http$command = _Platform_leaf('Http');
+var $elm$http$Http$subscription = _Platform_leaf('Http');
+var $elm$http$Http$request = function (r) {
+	return $elm$http$Http$command(
+		$elm$http$Http$Request(
+			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
+};
+var $elm$http$Http$get = function (r) {
+	return $elm$http$Http$request(
+		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $author$project$Page$Home$LatestPost = F4(
+	function (title, shortText, thumbnailResource, id) {
+		return {id: id, shortText: shortText, thumbnailResource: thumbnailResource, title: title};
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$map4 = _Json_map4;
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Page$Home$latestPostDecoder = A5(
+	$elm$json$Json$Decode$map4,
+	$author$project$Page$Home$LatestPost,
+	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'shortText', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'thumbnailResource', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int));
+var $elm$json$Json$Decode$list = _Json_decodeList;
+var $author$project$Page$Home$getLatestsPosts = $elm$http$Http$get(
+	{
+		expect: A2(
+			$elm$http$Http$expectJson,
+			$author$project$Page$Home$GotLatestsPosts,
+			$elm$json$Json$Decode$list($author$project$Page$Home$latestPostDecoder)),
+		url: 'src/posts/short/short_posts.json'
+	});
+var $author$project$Page$Home$init = function (_v0) {
+	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestsPosts);
+};
+var $author$project$Page$Posts$Loading = {$: 'Loading'};
+var $author$project$Page$Posts$GotPostWithId = function (a) {
+	return {$: 'GotPostWithId', a: a};
+};
+var $author$project$Page$Posts$Post = F7(
+	function (title, summary, content, date, id, references, images) {
+		return {content: content, date: date, id: id, images: images, references: references, summary: summary, title: title};
+	});
+var $elm$json$Json$Decode$map7 = _Json_map7;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $author$project$Page$Posts$postDecoder = A8(
+	$elm$json$Json$Decode$map7,
+	$author$project$Page$Posts$Post,
+	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'summary', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'content',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+	A2($elm$json$Json$Decode$field, 'date', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
+	A2(
+		$elm$json$Json$Decode$field,
+		'references',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'images',
+		$elm$json$Json$Decode$list(
+			$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string))));
+var $author$project$Page$Posts$postIdToRealId = function (id) {
+	return function (rid) {
+		return ($elm$core$String$length(rid) < 3) ? _Utils_ap(
+			($elm$core$String$length(rid) === 1) ? '00' : '0',
+			rid) : rid;
+	}(
+		$elm$core$String$fromInt(id));
+};
+var $author$project$Page$Posts$getPostWithId = function (id) {
+	return $elm$http$Http$get(
+		{
+			expect: A2($elm$http$Http$expectJson, $author$project$Page$Posts$GotPostWithId, $author$project$Page$Posts$postDecoder),
+			url: 'src/posts/long/post' + ($author$project$Page$Posts$postIdToRealId(id) + '.json')
+		});
+};
+var $author$project$Page$Posts$init = function (id) {
+	return _Utils_Tuple2(
+		$author$project$Page$Posts$Loading,
+		$author$project$Page$Posts$getPostWithId(id));
+};
+var $elm$url$Url$Parser$Parser = function (a) {
+	return {$: 'Parser', a: a};
+};
+var $elm$url$Url$Parser$State = F5(
+	function (visited, unvisited, params, frag, value) {
+		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
+	});
+var $elm$url$Url$Parser$custom = F2(
+	function (tipe, stringToSomething) {
+		return $elm$url$Url$Parser$Parser(
+			function (_v0) {
+				var visited = _v0.visited;
+				var unvisited = _v0.unvisited;
+				var params = _v0.params;
+				var frag = _v0.frag;
+				var value = _v0.value;
+				if (!unvisited.b) {
+					return _List_Nil;
+				} else {
+					var next = unvisited.a;
+					var rest = unvisited.b;
+					var _v2 = stringToSomething(next);
+					if (_v2.$ === 'Just') {
+						var nextValue = _v2.a;
+						return _List_fromArray(
+							[
+								A5(
+								$elm$url$Url$Parser$State,
+								A2($elm$core$List$cons, next, visited),
+								rest,
+								params,
+								frag,
+								value(nextValue))
+							]);
+					} else {
+						return _List_Nil;
+					}
+				}
+			});
+	});
+var $elm$url$Url$Parser$int = A2($elm$url$Url$Parser$custom, 'NUMBER', $elm$core$String$toInt);
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $elm$core$List$concatMap = F2(
+	function (f, list) {
+		return $elm$core$List$concat(
+			A2($elm$core$List$map, f, list));
+	});
+var $elm$url$Url$Parser$oneOf = function (parsers) {
+	return $elm$url$Url$Parser$Parser(
+		function (state) {
+			return A2(
+				$elm$core$List$concatMap,
+				function (_v0) {
+					var parser = _v0.a;
+					return parser(state);
+				},
+				parsers);
+		});
+};
+var $elm$url$Url$Parser$getFirstMatch = function (states) {
+	getFirstMatch:
+	while (true) {
+		if (!states.b) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var state = states.a;
+			var rest = states.b;
+			var _v1 = state.unvisited;
+			if (!_v1.b) {
+				return $elm$core$Maybe$Just(state.value);
+			} else {
+				if ((_v1.a === '') && (!_v1.b.b)) {
+					return $elm$core$Maybe$Just(state.value);
+				} else {
+					var $temp$states = rest;
+					states = $temp$states;
+					continue getFirstMatch;
+				}
+			}
+		}
+	}
+};
+var $elm$url$Url$Parser$removeFinalEmpty = function (segments) {
+	if (!segments.b) {
+		return _List_Nil;
+	} else {
+		if ((segments.a === '') && (!segments.b.b)) {
+			return _List_Nil;
+		} else {
+			var segment = segments.a;
+			var rest = segments.b;
+			return A2(
+				$elm$core$List$cons,
+				segment,
+				$elm$url$Url$Parser$removeFinalEmpty(rest));
+		}
+	}
+};
+var $elm$url$Url$Parser$preparePath = function (path) {
+	var _v0 = A2($elm$core$String$split, '/', path);
+	if (_v0.b && (_v0.a === '')) {
+		var segments = _v0.b;
+		return $elm$url$Url$Parser$removeFinalEmpty(segments);
+	} else {
+		var segments = _v0;
+		return $elm$url$Url$Parser$removeFinalEmpty(segments);
+	}
+};
+var $elm$url$Url$Parser$addToParametersHelp = F2(
+	function (value, maybeList) {
+		if (maybeList.$ === 'Nothing') {
+			return $elm$core$Maybe$Just(
+				_List_fromArray(
+					[value]));
+		} else {
+			var list = maybeList.a;
+			return $elm$core$Maybe$Just(
+				A2($elm$core$List$cons, value, list));
+		}
+	});
+var $elm$url$Url$percentDecode = _Url_percentDecode;
 var $elm$url$Url$Parser$addParam = F2(
 	function (segment, dict) {
 		var _v0 = A2($elm$core$String$split, '=', segment);
@@ -5896,7 +6407,6 @@ var $elm$url$Url$Parser$addParam = F2(
 			return dict;
 		}
 	});
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$url$Url$Parser$prepareQuery = function (maybeQuery) {
 	if (maybeQuery.$ === 'Nothing') {
 		return $elm$core$Dict$empty;
@@ -6064,18 +6574,14 @@ var $author$project$Main$stepUrl = F2(
 					A2(
 						$author$project$Main$stepHome,
 						model,
-						_Utils_Tuple2(
-							A2($author$project$Page$Home$init, 'Home', $author$project$Page$Home$latestPosts),
-							$elm$core$Platform$Cmd$none))),
+						$author$project$Page$Home$init(_Utils_Tuple0))),
 					A2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$s('Home'),
 					A2(
 						$author$project$Main$stepHome,
 						model,
-						_Utils_Tuple2(
-							A2($author$project$Page$Home$init, 'Home', $author$project$Page$Home$latestPosts),
-							$elm$core$Platform$Cmd$none))),
+						$author$project$Page$Home$init(_Utils_Tuple0))),
 					A2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$s('About'),
@@ -6091,11 +6597,11 @@ var $author$project$Main$stepUrl = F2(
 						$elm$url$Url$Parser$slash,
 						$elm$url$Url$Parser$s('Posts'),
 						$elm$url$Url$Parser$int),
-					function (_v2) {
+					function (id) {
 						return A2(
 							$author$project$Main$stepPost,
 							model,
-							_Utils_Tuple2($author$project$Page$Posts$examplePost, $elm$core$Platform$Cmd$none));
+							$author$project$Page$Posts$init(id));
 					}),
 					A2(
 					$author$project$Main$route,
@@ -6103,7 +6609,7 @@ var $author$project$Main$stepUrl = F2(
 					A2(
 						$author$project$Main$stepPost,
 						model,
-						_Utils_Tuple2($author$project$Page$Posts$examplePost, $elm$core$Platform$Cmd$none)))
+						$author$project$Page$Posts$init(1)))
 				]));
 		var fakeUrl = _Utils_update(
 			url,
@@ -6118,7 +6624,6 @@ var $author$project$Main$stepUrl = F2(
 					}
 				}()
 			});
-		var dummy = A2($elm$core$Debug$log, 'Route', url);
 		var _v0 = A2($elm$url$Url$Parser$parse, parser, fakeUrl);
 		if (_v0.$ === 'Just') {
 			var answer = _v0.a;
@@ -6138,8 +6643,7 @@ var $author$project$Main$init = F3(
 			url,
 			{
 				key: key,
-				page: $author$project$Main$Home(
-					A2($author$project$Page$Home$Model, 'Home', $author$project$Page$Home$latestPosts))
+				page: $author$project$Main$Home($author$project$Page$Home$Loading)
 			});
 	});
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -6197,13 +6701,45 @@ var $author$project$Page$About$update = F2(
 	function (_v0, model) {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	});
+var $author$project$Page$Home$Failure = {$: 'Failure'};
+var $author$project$Page$Home$Success = function (a) {
+	return {$: 'Success', a: a};
+};
 var $author$project$Page$Home$update = F2(
 	function (msg, model) {
-		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+		if (msg.$ === 'OnLatestPostPressed') {
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+		} else {
+			var result = msg.a;
+			if (result.$ === 'Ok') {
+				var lp = result.a;
+				return _Utils_Tuple2(
+					$author$project$Page$Home$Success(lp),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2($author$project$Page$Home$Failure, $elm$core$Platform$Cmd$none);
+			}
+		}
 	});
+var $author$project$Page$Posts$Failure = {$: 'Failure'};
+var $author$project$Page$Posts$Success = function (a) {
+	return {$: 'Success', a: a};
+};
 var $author$project$Page$Posts$update = F2(
-	function (msg, post) {
-		return _Utils_Tuple2(post, $elm$core$Platform$Cmd$none);
+	function (msg, model) {
+		if (msg.$ === 'OnShareButtonPressed') {
+			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+		} else {
+			var result = msg.a;
+			if (result.$ === 'Ok') {
+				var post = result.a;
+				return _Utils_Tuple2(
+					$author$project$Page$Posts$Success(post),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
+			}
+		}
 	});
 var $author$project$Main$update = F2(
 	function (message, model) {
@@ -6214,7 +6750,6 @@ var $author$project$Main$update = F2(
 				var urlRequest = message.a;
 				if (urlRequest.$ === 'Internal') {
 					var url = urlRequest.a;
-					var fafa = A2($elm$core$Debug$log, 'Url:', url);
 					return _Utils_Tuple2(
 						model,
 						A2(
@@ -6272,6 +6807,115 @@ var $elm$browser$Browser$Document = F2(
 	function (title, body) {
 		return {body: body, title: title};
 	});
+var $elm$html$Html$br = _VirtualDom_node('br');
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$footer = _VirtualDom_node('footer');
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$img = _VirtualDom_node('img');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
+var $author$project$Components$Footer$github = A2(
+	$elm$html$Html$a,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$href('https://github.com/lisandroDiMeo/'),
+			$elm$html$Html$Attributes$target('_blank')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$img,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$src('src/assets/pxgithub.png'),
+					$elm$html$Html$Attributes$class('github-icon')
+				]),
+			_List_Nil)
+		]));
+var $author$project$Components$Footer$linkedin = A2(
+	$elm$html$Html$a,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$href('https://www.linkedin.com/in/lisandrodimeo/'),
+			$elm$html$Html$Attributes$target('_blank')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$img,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$src('src/assets/pxlinkedin.png'),
+					$elm$html$Html$Attributes$class('linkedin-icon')
+				]),
+			_List_Nil)
+		]));
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$small = _VirtualDom_node('small');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Components$Footer$footer = A2(
+	$elm$html$Html$footer,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('content-padding')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('footer-icons')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Find me at: ')
+								])),
+							$author$project$Components$Footer$github,
+							$author$project$Components$Footer$linkedin
+						])),
+					A2($elm$html$Html$br, _List_Nil, _List_Nil),
+					A2($elm$html$Html$br, _List_Nil, _List_Nil),
+					A2(
+					$elm$html$Html$small,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('No rights reserved, just be aware that identity theft is not a joke, millions of families suffer it every year. ')
+						]))
+				]))
+		]));
 var $author$project$Main$navBarTabs = _List_fromArray(
 	[
 		{imageResource: 'finder.png', onPressed: $elm$core$Maybe$Nothing, title: 'Home'},
@@ -6289,29 +6933,12 @@ var $author$project$Components$Navbar$ulStyle = _List_fromArray(
 		A2($elm$html$Html$Attributes$style, 'overflow', 'hidden')
 	]);
 var $author$project$Components$Navbar$navbarContainer = $elm$html$Html$ul($author$project$Components$Navbar$ulStyle);
-var $elm$html$Html$a = _VirtualDom_node('a');
-var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$Attributes$height = function (n) {
 	return A2(
 		_VirtualDom_attribute,
 		'height',
 		$elm$core$String$fromInt(n));
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
-var $elm$html$Html$img = _VirtualDom_node('img');
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -6330,15 +6957,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$html$Html$p = _VirtualDom_node('p');
-var $elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
-};
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$width = function (n) {
 	return A2(
 		_VirtualDom_attribute,
@@ -6429,6 +7047,7 @@ var $author$project$Components$Navbar$navbar = function (tabsInformation) {
 			]));
 };
 var $author$project$Main$header = $author$project$Components$Navbar$navbar($author$project$Main$navBarTabs);
+var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Page$About$parseAbout = function (rawAboutMe) {
 	var l = A2($elm$core$String$split, '%', rawAboutMe);
@@ -6459,58 +7078,109 @@ var $author$project$Page$About$view = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text(model.title)
+						$elm$html$Html$text('About me')
 					])),
 				A2(
 				$elm$html$Html$div,
 				_List_Nil,
-				$author$project$Page$About$parseAbout(model.content))
-			]));
-};
-var $author$project$Page$Home$view = function (model) {
-	var posts = A2(
-		$elm$core$List$map,
-		function (lp) {
-			return A2(
+				$author$project$Page$About$parseAbout(model.content)),
+				A2(
 				$elm$html$Html$div,
 				_List_Nil,
 				_List_fromArray(
 					[
 						A2(
-						$elm$html$Html$h1,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(lp.title)
-							])),
-						A2(
-						$elm$html$Html$p,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(lp.shortText)
-							])),
-						A2(
 						$elm$html$Html$img,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$src(lp.thumbnailResource),
-								$elm$html$Html$Attributes$width(128),
-								$elm$html$Html$Attributes$height(128),
-								A2($elm$html$Html$Attributes$style, 'display', 'block'),
-								A2($elm$html$Html$Attributes$style, 'padding', '12px 14px')
+								$elm$html$Html$Attributes$src('src/assets/me.jpg'),
+								A2($elm$html$Html$Attributes$style, 'width', '512px'),
+								$elm$html$Html$Attributes$alt('Thats me in Bariloche :)')
 							]),
 						_List_Nil)
-					]));
-		},
-		model.latestsPosts);
+					]))
+			]));
+};
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$core$List$sortBy = _List_sortBy;
+var $author$project$Page$Home$orderPosts = $elm$core$List$sortBy(
+	function (p) {
+		return (-1) * p.id;
+	});
+var $author$project$Page$Home$viewLatestsPosts = function (model) {
+	switch (model.$) {
+		case 'Failure':
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Posts not found 😞')
+						]))
+				]);
+		case 'Loading':
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Loading... 🔄')
+						]))
+				]);
+		default:
+			var latestposts = model.a;
+			return A2(
+				$elm$core$List$map,
+				function (lp) {
+					return A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$h1,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('-> ' + lp.title)
+									])),
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(lp.shortText)
+									])),
+								A2(
+								$elm$html$Html$img,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$src(lp.thumbnailResource),
+										$elm$html$Html$Attributes$width(128),
+										$elm$html$Html$Attributes$height(128),
+										A2($elm$html$Html$Attributes$style, 'display', 'block'),
+										A2($elm$html$Html$Attributes$style, 'padding', '12px 14px')
+									]),
+								_List_Nil)
+							]));
+				},
+				$author$project$Page$Home$orderPosts(latestposts));
+	}
+};
+var $author$project$Page$Home$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
-		posts);
+		$author$project$Page$Home$viewLatestsPosts(model));
 };
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
@@ -6522,12 +7192,11 @@ var $author$project$Commons$Zip$zip = F2(
 	function (l1, l2) {
 		return A3($elm$core$List$map2, $elm$core$Tuple$pair, l1, l2);
 	});
-var $author$project$Page$Posts$view = function (post) {
-	var postBody = A2(
-		$elm$core$List$map,
-		function (_v0) {
-			var content = _v0.a;
-			var image = _v0.b;
+var $author$project$Page$Posts$viewPost = function (model) {
+	var postBody = $elm$core$List$map(
+		function (_v1) {
+			var content = _v1.a;
+			var image = _v1.b;
 			if (image.$ === 'Nothing') {
 				return A2(
 					$elm$html$Html$p,
@@ -6563,67 +7232,96 @@ var $author$project$Page$Posts$view = function (post) {
 							_List_Nil)
 						]));
 			}
-		},
-		A2($author$project$Commons$Zip$zip, post.content, post.images));
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
-			]),
-		_Utils_ap(
-			_List_fromArray(
+		});
+	switch (model.$) {
+		case 'Failure':
+			return _List_fromArray(
 				[
 					A2(
-					$elm$html$Html$h2,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(post.title)
-						])),
-					A2(
 					$elm$html$Html$p,
 					_List_Nil,
 					_List_fromArray(
 						[
-							A2(
-							$elm$html$Html$i,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.summary)
-								]))
-						])),
-					A2(
-					$elm$html$Html$p,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(post.date)
+							$elm$html$Html$text('That post doesn\'t exist!🤯')
 						]))
-				]),
-			_Utils_ap(
-				postBody,
+				]);
+		case 'Loading':
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Loading... 🔄')
+						]))
+				]);
+		default:
+			var post = model.a;
+			return _Utils_ap(
 				_List_fromArray(
 					[
+						A2(
+						$elm$html$Html$h2,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(post.title)
+							])),
 						A2(
 						$elm$html$Html$p,
 						_List_Nil,
 						_List_fromArray(
 							[
 								A2(
-								$elm$html$Html$img,
+								$elm$html$Html$i,
+								_List_Nil,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$src('src/assets/link.png'),
-										$elm$html$Html$Attributes$width(16),
-										$elm$html$Html$Attributes$height(16),
-										A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-									]),
-								_List_Nil),
-								$elm$html$Html$text('Share it!')
+										$elm$html$Html$text(post.summary)
+									]))
+							])),
+						A2(
+						$elm$html$Html$p,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(post.date)
 							]))
-					]))));
+					]),
+				_Utils_ap(
+					postBody(
+						A2($author$project$Commons$Zip$zip, post.content, post.images)),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$img,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$src('src/assets/link.png'),
+											$elm$html$Html$Attributes$width(16),
+											$elm$html$Html$Attributes$height(16),
+											A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
+										]),
+									_List_Nil),
+									$elm$html$Html$text('Share it!')
+								]))
+						])));
+	}
+};
+var $author$project$Page$Posts$view = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
+			]),
+		$author$project$Page$Posts$viewPost(model));
 };
 var $author$project$Main$wrapperFor = function (page) {
 	switch (page.$) {
@@ -6635,14 +7333,15 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$Home$view(home)
+						$author$project$Page$Home$view(home),
+						$author$project$Components$Footer$footer
 					]));
 		case 'NotFound':
 			return A2(
 				$elm$browser$Browser$Document,
 				'NotFound',
 				_List_fromArray(
-					[$author$project$Main$header]));
+					[$author$project$Main$header, $author$project$Components$Footer$footer]));
 		case 'About':
 			var about = page.a;
 			return A2(
@@ -6651,7 +7350,8 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$About$view(about)
+						$author$project$Page$About$view(about),
+						$author$project$Components$Footer$footer
 					]));
 		default:
 			var post = page.a;
@@ -6661,7 +7361,8 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$Posts$view(post)
+						$author$project$Page$Posts$view(post),
+						$author$project$Components$Footer$footer
 					]));
 	}
 };
