@@ -3,6 +3,7 @@ module Page.Posts exposing (..)
 import Html exposing (..)
 import Commons.Zip exposing (zip)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (..)
 
@@ -10,9 +11,6 @@ import Json.Decode exposing (..)
 
 init : Int -> (Model, Cmd Msg)
 init id = (Loading, getPostWithId id)
-
-examplePost : Post
-examplePost = Post "Lipsum" "Example" [] "25/04/1999" -1 [] []
 
 -- MODEL
 

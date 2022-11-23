@@ -37,7 +37,7 @@ type Page
     | NotFound
     | About About.Model
     | Posts Posts.Model
-    -- | Other
+    -- | Other
 
 -- SUBSCRIPTIONS
 
