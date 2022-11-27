@@ -6652,6 +6652,7 @@ var $author$project$Main$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$none;
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $elm$core$Debug$log = _Debug_log;
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
@@ -6708,6 +6709,7 @@ var $author$project$Page$Home$Success = function (a) {
 var $author$project$Page$Home$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'OnLatestPostPressed') {
+			var postId = msg.a;
 			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		} else {
 			var result = msg.a;
@@ -6728,6 +6730,8 @@ var $author$project$Page$Posts$Success = function (a) {
 var $author$project$Page$Posts$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'OnShareButtonPressed') {
+			var s = msg.a;
+			var d = A2($elm$core$Debug$log, s, '');
 			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		} else {
 			var result = msg.a;
@@ -6767,6 +6771,7 @@ var $author$project$Main$update = F2(
 				return A2($author$project$Main$stepUrl, url, model);
 			case 'HomeMsg':
 				var msg = message.a;
+				var d = A2($elm$core$Debug$log, 'Msg', msg);
 				var _v2 = model.page;
 				if (_v2.$ === 'Home') {
 					var home = _v2.a;
@@ -7047,6 +7052,8 @@ var $author$project$Components$Navbar$navbar = function (tabsInformation) {
 			]));
 };
 var $author$project$Main$header = $author$project$Components$Navbar$navbar($author$project$Main$navBarTabs);
+var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
 var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Page$About$parseAbout = function (rawAboutMe) {
@@ -7101,6 +7108,9 @@ var $author$project$Page$About$view = function (model) {
 					]))
 			]));
 };
+var $author$project$Page$Home$OnLatestPostPressed = function (a) {
+	return {$: 'OnLatestPostPressed', a: a};
+};
 var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
@@ -7145,7 +7155,12 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 							[
 								A2(
 								$elm$html$Html$h1,
-								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$Events$onClick(
+										$author$project$Page$Home$OnLatestPostPressed(
+											$elm$core$String$fromInt(lp.id)))
+									]),
 								_List_fromArray(
 									[
 										$elm$html$Html$text('-> ' + lp.title)
@@ -7181,6 +7196,9 @@ var $author$project$Page$Home$view = function (model) {
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
 		$author$project$Page$Home$viewLatestsPosts(model));
+};
+var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
+	return {$: 'OnShareButtonPressed', a: a};
 };
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
@@ -7304,6 +7322,8 @@ var $author$project$Page$Posts$viewPost = function (model) {
 									_List_fromArray(
 										[
 											$elm$html$Html$Attributes$src('src/assets/link.png'),
+											$elm$html$Html$Events$onClick(
+											$author$project$Page$Posts$OnShareButtonPressed('123')),
 											$elm$html$Html$Attributes$width(16),
 											$elm$html$Html$Attributes$height(16),
 											A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
@@ -7333,7 +7353,10 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$Home$view(home),
+						A2(
+						$elm$html$Html$map,
+						$author$project$Main$HomeMsg,
+						$author$project$Page$Home$view(home)),
 						$author$project$Components$Footer$footer
 					]));
 		case 'NotFound':
@@ -7361,7 +7384,10 @@ var $author$project$Main$wrapperFor = function (page) {
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$Posts$view(post),
+						A2(
+						$elm$html$Html$map,
+						$author$project$Main$PostsMsg,
+						$author$project$Page$Posts$view(post)),
 						$author$project$Components$Footer$footer
 					]));
 	}

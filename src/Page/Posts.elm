@@ -29,11 +29,11 @@ type Model = Failure | Loading | Success Post
 
 -- VIEW 
 
-view : Model -> Html msg
+view : Model -> Html Msg
 view model = 
     div [style "padding" "12px 24px 12px 24px"] (viewPost model)
 
-viewPost : Model -> List (Html msg)
+viewPost : Model -> List (Html Msg)
 viewPost model =
     let postBody = List.map (\(content, image) -> 
             case image of
@@ -47,16 +47,19 @@ viewPost model =
             h2 [] [text post.title],
             p [] [i [] [text post.summary]],
             p [] [text post.date]
-            ] ++ (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ])
+            ] ++ (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed "123"), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ])
 
 -- UPDATE 
 
-type Msg = OnShareButtonPressed | GotPostWithId (Result Http.Error Post) -- | OnNextPostButton Int
+type Msg = OnShareButtonPressed String | GotPostWithId (Result Http.Error Post) -- | OnNextPostButton Int
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model = 
     case msg of 
-        OnShareButtonPressed -> (model, Cmd.none)
+        OnShareButtonPressed s ->
+            let d = Debug.log s ""
+            in
+            (model, Cmd.none)
         GotPostWithId result -> 
             case result of 
                 Ok post -> (Success post, Cmd.none)

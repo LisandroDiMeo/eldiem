@@ -3,14 +3,13 @@ module Main exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import Url
-import Url.Parser exposing (Parser, (</>), int, map, oneOf, s, string, parse)
-import Html exposing (h1, text)
+import Url.Parser exposing (Parser, (</>), int, oneOf, s, parse)
+import Html
 import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
 import Page.Home as Home
 import Page.About as About
 import Page.Posts as Posts
-import Html.Attributes exposing (..)
 
 -- MAIN
 
@@ -64,10 +63,10 @@ header = navbar navBarTabs
 wrapperFor : Page -> Browser.Document Msg
 wrapperFor page 
     = case page of
-        Home home -> Browser.Document "Home" ([header, Home.view home, footer])
+        Home home -> Browser.Document "Home" ([header, Home.view home |> Html.map HomeMsg, footer])
         NotFound -> Browser.Document "NotFound" ([header, footer])
         About about -> Browser.Document "About" ([header, About.view about, footer])
-        Posts post -> Browser.Document "Post" ([header, Posts.view post, footer])
+        Posts post -> Browser.Document "Post" ([header, Posts.view post |> Html.map PostsMsg, footer])
 
 -- INIT
 
@@ -124,7 +123,9 @@ update message model =
 
         UrlChanged url -> stepUrl url model
 
-        HomeMsg msg -> 
+        HomeMsg msg ->
+            let d = Debug.log "Msg" msg
+            in
             case model.page of
                 Home home -> stepHome model (Home.update msg home)
                 _ -> (model, Cmd.none)
