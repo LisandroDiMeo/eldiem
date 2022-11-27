@@ -1,7 +1,7 @@
 module Page.Home exposing
   ( Model (..)
   , init
-  , Msg
+  , Msg (..)
   , update
   , view
   , LatestPost

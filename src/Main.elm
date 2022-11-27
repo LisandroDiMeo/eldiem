@@ -3,11 +3,12 @@ module Main exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import Url
+import Url.Builder
 import Url.Parser exposing (Parser, (</>), int, oneOf, s, parse)
 import Html
 import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
-import Page.Home as Home
+import Page.Home as Home exposing (Msg(..))
 import Page.About as About
 import Page.Posts as Posts
 
@@ -110,12 +111,19 @@ type Msg
     | AboutMsg About.Msg
     | PostsMsg Posts.Msg
 
+postUrlWithId : String -> Maybe Url.Url
+postUrlWithId postId = Url.fromString <| absoluteUrl postId
+
+--check how to remove localhost hardcoded
+absoluteUrl : String -> String
+absoluteUrl postId = "http://localhost:8080" ++ (Url.Builder.absolute ["#","Posts",postId] [])
+
 update : Msg -> Model -> ( Model, Cmd Msg )
-update message model = 
+update message model =
     case message of
         NoOp -> (model, Cmd.none)
         
-        LinkClicked urlRequest -> 
+        LinkClicked urlRequest ->
             case urlRequest of 
                 Browser.Internal url -> (model, Nav.pushUrl model.key (Url.toString url))
 
@@ -124,12 +132,15 @@ update message model =
         UrlChanged url -> stepUrl url model
 
         HomeMsg msg ->
-            let d = Debug.log "Msg" msg
-            in
             case model.page of
-                Home home -> stepHome model (Home.update msg home)
+                Home home ->
+                    case msg of
+                        GotLatestsPosts _ -> stepHome model (Home.update msg home)
+                        OnLatestPostPressed postId -> case postUrlWithId <| postId of
+                                                            Just postUrl -> update (LinkClicked (Browser.Internal postUrl)) model
+                                                            Nothing -> (model, Cmd.none)
                 _ -> (model, Cmd.none)
-        
+
         AboutMsg msg -> 
             case model.page of 
                 About about -> stepAbout model (About.update msg about)

@@ -6652,7 +6652,36 @@ var $author$project$Main$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$none;
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
-var $elm$core$Debug$log = _Debug_log;
+var $elm$url$Url$Builder$toQueryPair = function (_v0) {
+	var key = _v0.a;
+	var value = _v0.b;
+	return key + ('=' + value);
+};
+var $elm$url$Url$Builder$toQuery = function (parameters) {
+	if (!parameters.b) {
+		return '';
+	} else {
+		return '?' + A2(
+			$elm$core$String$join,
+			'&',
+			A2($elm$core$List$map, $elm$url$Url$Builder$toQueryPair, parameters));
+	}
+};
+var $elm$url$Url$Builder$absolute = F2(
+	function (pathSegments, parameters) {
+		return '/' + (A2($elm$core$String$join, '/', pathSegments) + $elm$url$Url$Builder$toQuery(parameters));
+	});
+var $author$project$Main$absoluteUrl = function (postId) {
+	return 'http://localhost:8080' + A2(
+		$elm$url$Url$Builder$absolute,
+		_List_fromArray(
+			['#', 'Posts', postId]),
+		_List_Nil);
+};
+var $author$project$Main$postUrlWithId = function (postId) {
+	return $elm$url$Url$fromString(
+		$author$project$Main$absoluteUrl(postId));
+};
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
@@ -6727,6 +6756,7 @@ var $author$project$Page$Posts$Failure = {$: 'Failure'};
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
+var $elm$core$Debug$log = _Debug_log;
 var $author$project$Page$Posts$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'OnShareButtonPressed') {
@@ -6747,65 +6777,83 @@ var $author$project$Page$Posts$update = F2(
 	});
 var $author$project$Main$update = F2(
 	function (message, model) {
-		switch (message.$) {
-			case 'NoOp':
-				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-			case 'LinkClicked':
-				var urlRequest = message.a;
-				if (urlRequest.$ === 'Internal') {
-					var url = urlRequest.a;
-					return _Utils_Tuple2(
-						model,
-						A2(
-							$elm$browser$Browser$Navigation$pushUrl,
-							model.key,
-							$elm$url$Url$toString(url)));
-				} else {
-					var href = urlRequest.a;
-					return _Utils_Tuple2(
-						model,
-						$elm$browser$Browser$Navigation$load(href));
-				}
-			case 'UrlChanged':
-				var url = message.a;
-				return A2($author$project$Main$stepUrl, url, model);
-			case 'HomeMsg':
-				var msg = message.a;
-				var d = A2($elm$core$Debug$log, 'Msg', msg);
-				var _v2 = model.page;
-				if (_v2.$ === 'Home') {
-					var home = _v2.a;
-					return A2(
-						$author$project$Main$stepHome,
-						model,
-						A2($author$project$Page$Home$update, msg, home));
-				} else {
+		update:
+		while (true) {
+			switch (message.$) {
+				case 'NoOp':
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
-			case 'AboutMsg':
-				var msg = message.a;
-				var _v3 = model.page;
-				if (_v3.$ === 'About') {
-					var about = _v3.a;
-					return A2(
-						$author$project$Main$stepAbout,
-						model,
-						A2($author$project$Page$About$update, msg, about));
-				} else {
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
-			default:
-				var msg = message.a;
-				var _v4 = model.page;
-				if (_v4.$ === 'Posts') {
-					var post = _v4.a;
-					return A2(
-						$author$project$Main$stepPost,
-						model,
-						A2($author$project$Page$Posts$update, msg, post));
-				} else {
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
+				case 'LinkClicked':
+					var urlRequest = message.a;
+					if (urlRequest.$ === 'Internal') {
+						var url = urlRequest.a;
+						return _Utils_Tuple2(
+							model,
+							A2(
+								$elm$browser$Browser$Navigation$pushUrl,
+								model.key,
+								$elm$url$Url$toString(url)));
+					} else {
+						var href = urlRequest.a;
+						return _Utils_Tuple2(
+							model,
+							$elm$browser$Browser$Navigation$load(href));
+					}
+				case 'UrlChanged':
+					var url = message.a;
+					return A2($author$project$Main$stepUrl, url, model);
+				case 'HomeMsg':
+					var msg = message.a;
+					var _v2 = model.page;
+					if (_v2.$ === 'Home') {
+						var home = _v2.a;
+						if (msg.$ === 'GotLatestsPosts') {
+							return A2(
+								$author$project$Main$stepHome,
+								model,
+								A2($author$project$Page$Home$update, msg, home));
+						} else {
+							var postId = msg.a;
+							var _v4 = $author$project$Main$postUrlWithId(postId);
+							if (_v4.$ === 'Just') {
+								var postUrl = _v4.a;
+								var $temp$message = $author$project$Main$LinkClicked(
+									$elm$browser$Browser$Internal(postUrl)),
+									$temp$model = model;
+								message = $temp$message;
+								model = $temp$model;
+								continue update;
+							} else {
+								return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+							}
+						}
+					} else {
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					}
+				case 'AboutMsg':
+					var msg = message.a;
+					var _v5 = model.page;
+					if (_v5.$ === 'About') {
+						var about = _v5.a;
+						return A2(
+							$author$project$Main$stepAbout,
+							model,
+							A2($author$project$Page$About$update, msg, about));
+					} else {
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					}
+				default:
+					var msg = message.a;
+					var _v6 = model.page;
+					if (_v6.$ === 'Posts') {
+						var post = _v6.a;
+						return A2(
+							$author$project$Main$stepPost,
+							model,
+							A2($author$project$Page$Posts$update, msg, post));
+					} else {
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					}
+			}
 		}
 	});
 var $elm$browser$Browser$Document = F2(
