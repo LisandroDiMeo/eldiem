@@ -7261,6 +7261,67 @@ var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
 };
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
+var $author$project$Page$Posts$dualPagination = function (post) {
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$a,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$href(
+					'#/Posts/' + $elm$core$String$fromInt(post.id - 1)),
+					A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('<prev')
+				])),
+			A2(
+			$elm$html$Html$a,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$href(
+					'#/Posts/' + $elm$core$String$fromInt(post.id + 1)),
+					A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('next>')
+				]))
+		]);
+};
+var $author$project$Page$Posts$hasPreviousPosts = function (post) {
+	return (post.id <= 1) ? false : true;
+};
+var $author$project$Page$Posts$singlePagination = function (post) {
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$a,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$href(
+					'#/Posts/' + $elm$core$String$fromInt(post.id + 1)),
+					A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('next>')
+				]))
+		]);
+};
+var $author$project$Page$Posts$pagination = function (post) {
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					A2($elm$html$Html$Attributes$style, 'display', 'inline-flex')
+				]),
+			$author$project$Page$Posts$hasPreviousPosts(post) ? $author$project$Page$Posts$dualPagination(post) : $author$project$Page$Posts$singlePagination(post))
+		]);
+};
 var $elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
@@ -7336,61 +7397,63 @@ var $author$project$Page$Posts$viewPost = function (model) {
 		default:
 			var post = model.a;
 			return _Utils_ap(
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$h2,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(post.title)
-							])),
-						A2(
-						$elm$html$Html$p,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$i,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text(post.summary)
-									]))
-							])),
-						A2(
-						$elm$html$Html$p,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(post.date)
-							]))
-					]),
 				_Utils_ap(
-					postBody(
-						A2($author$project$Commons$Zip$zip, post.content, post.images)),
 					_List_fromArray(
 						[
+							A2(
+							$elm$html$Html$h2,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(post.title)
+								])),
 							A2(
 							$elm$html$Html$p,
 							_List_Nil,
 							_List_fromArray(
 								[
 									A2(
-									$elm$html$Html$img,
+									$elm$html$Html$i,
+									_List_Nil,
 									_List_fromArray(
 										[
-											$elm$html$Html$Attributes$src('src/assets/link.png'),
-											$elm$html$Html$Events$onClick(
-											$author$project$Page$Posts$OnShareButtonPressed('123')),
-											$elm$html$Html$Attributes$width(16),
-											$elm$html$Html$Attributes$height(16),
-											A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-										]),
-									_List_Nil),
-									$elm$html$Html$text('Share it!')
+											$elm$html$Html$text(post.summary)
+										]))
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(post.date)
 								]))
-						])));
+						]),
+					_Utils_ap(
+						postBody(
+							A2($author$project$Commons$Zip$zip, post.content, post.images)),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$img,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$src('src/assets/link.png'),
+												$elm$html$Html$Events$onClick(
+												$author$project$Page$Posts$OnShareButtonPressed('123')),
+												$elm$html$Html$Attributes$width(16),
+												$elm$html$Html$Attributes$height(16),
+												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
+											]),
+										_List_Nil),
+										$elm$html$Html$text('Share it!')
+									]))
+							]))),
+				$author$project$Page$Posts$pagination(post));
 	}
 };
 var $author$project$Page$Posts$view = function (model) {

@@ -41,14 +41,35 @@ viewPost model =
                 Just s -> div [] [p [] [text content], img [src s, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []]) 
     in 
     case model of 
-        Failure -> [ p [] [text "That post doesn't exist!🤯"] ]
+        Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
         Success post -> ([
             h2 [] [text post.title],
             p [] [i [] [text post.summary]],
             p [] [text post.date]
-            ] ++ (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed "123"), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ])
+            ] ++
+            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed "123"), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
+            pagination post
 
+pagination : Post -> List (Html msg)
+pagination post = [
+    div [style "display" "inline-flex"] <| if hasPreviousPosts post then dualPagination post else singlePagination post
+    ]
+
+dualPagination : Post -> List (Html msg)
+dualPagination post = [
+    a [href <| "#/Posts/" ++ String.fromInt (post.id - 1), style "text-decoration" "none"] [text "<prev"] ,
+    a [href <| "#/Posts/" ++ String.fromInt (post.id + 1), style "text-decoration" "none"] [text "next>"]
+    ]
+
+singlePagination : Post -> List (Html msg)
+singlePagination post = [
+    a [href <| "#/Posts/" ++ String.fromInt (post.id + 1), style "text-decoration" "none"] [text "next>"]
+    ]
+
+
+hasPreviousPosts : Post -> Bool
+hasPreviousPosts post = if post.id <= 1 then False else True
 -- UPDATE 
 
 type Msg = OnShareButtonPressed String | GotPostWithId (Result Http.Error Post) -- | OnNextPostButton Int
