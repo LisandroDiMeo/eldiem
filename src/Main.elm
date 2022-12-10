@@ -122,14 +122,15 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         NoOp -> (model, Cmd.none)
-        
+
         LinkClicked urlRequest ->
             case urlRequest of 
                 Browser.Internal url -> (model, Nav.pushUrl model.key (Url.toString url))
 
                 Browser.External href -> (model, Nav.load href)
 
-        UrlChanged url -> stepUrl url model
+        UrlChanged url ->
+            stepUrl url model
 
         HomeMsg msg ->
             case model.page of
@@ -137,7 +138,7 @@ update message model =
                     case msg of
                         GotLatestsPosts _ -> stepHome model (Home.update msg home)
                         OnLatestPostPressed postId -> case postUrlWithId <| postId of
-                                                            Just postUrl -> update (LinkClicked (Browser.Internal postUrl)) model
+                                                            Just postUrl -> stepPost model (Posts.init <| Maybe.withDefault 0 <| String.toInt postId) -- update (LinkClicked (Browser.Internal postUrl)) model
                                                             Nothing -> (model, Cmd.none)
                 _ -> (model, Cmd.none)
 

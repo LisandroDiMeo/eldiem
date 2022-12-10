@@ -49,7 +49,7 @@ viewLatestsPosts model =
         Failure -> [p [] [text "Posts not found 😞"]]
         Loading -> [p [] [text "Loading... 🔄"]]
         Success latestposts -> List.map (\lp -> div [] [
-                h1 [onClick (OnLatestPostPressed <| String.fromInt <| lp.id)] [text ("-> " ++ lp.title)],
+                h1 [] [a [href ("#/Posts/" ++ String.fromInt lp.id), style "text-decoration" "none"] [text ("-> " ++ lp.title)]],
                 p [] [text lp.shortText],
                 img [src lp.thumbnailResource, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []
             ]) (orderPosts latestposts)

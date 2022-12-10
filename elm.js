@@ -6775,85 +6775,93 @@ var $author$project$Page$Posts$update = F2(
 			}
 		}
 	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
 var $author$project$Main$update = F2(
 	function (message, model) {
-		update:
-		while (true) {
-			switch (message.$) {
-				case 'NoOp':
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				case 'LinkClicked':
-					var urlRequest = message.a;
-					if (urlRequest.$ === 'Internal') {
-						var url = urlRequest.a;
-						return _Utils_Tuple2(
+		switch (message.$) {
+			case 'NoOp':
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			case 'LinkClicked':
+				var urlRequest = message.a;
+				if (urlRequest.$ === 'Internal') {
+					var url = urlRequest.a;
+					return _Utils_Tuple2(
+						model,
+						A2(
+							$elm$browser$Browser$Navigation$pushUrl,
+							model.key,
+							$elm$url$Url$toString(url)));
+				} else {
+					var href = urlRequest.a;
+					return _Utils_Tuple2(
+						model,
+						$elm$browser$Browser$Navigation$load(href));
+				}
+			case 'UrlChanged':
+				var url = message.a;
+				return A2($author$project$Main$stepUrl, url, model);
+			case 'HomeMsg':
+				var msg = message.a;
+				var _v2 = model.page;
+				if (_v2.$ === 'Home') {
+					var home = _v2.a;
+					if (msg.$ === 'GotLatestsPosts') {
+						return A2(
+							$author$project$Main$stepHome,
 							model,
-							A2(
-								$elm$browser$Browser$Navigation$pushUrl,
-								model.key,
-								$elm$url$Url$toString(url)));
+							A2($author$project$Page$Home$update, msg, home));
 					} else {
-						var href = urlRequest.a;
-						return _Utils_Tuple2(
-							model,
-							$elm$browser$Browser$Navigation$load(href));
-					}
-				case 'UrlChanged':
-					var url = message.a;
-					return A2($author$project$Main$stepUrl, url, model);
-				case 'HomeMsg':
-					var msg = message.a;
-					var _v2 = model.page;
-					if (_v2.$ === 'Home') {
-						var home = _v2.a;
-						if (msg.$ === 'GotLatestsPosts') {
+						var postId = msg.a;
+						var _v4 = $author$project$Main$postUrlWithId(postId);
+						if (_v4.$ === 'Just') {
+							var postUrl = _v4.a;
 							return A2(
-								$author$project$Main$stepHome,
+								$author$project$Main$stepPost,
 								model,
-								A2($author$project$Page$Home$update, msg, home));
+								$author$project$Page$Posts$init(
+									A2(
+										$elm$core$Maybe$withDefault,
+										0,
+										$elm$core$String$toInt(postId))));
 						} else {
-							var postId = msg.a;
-							var _v4 = $author$project$Main$postUrlWithId(postId);
-							if (_v4.$ === 'Just') {
-								var postUrl = _v4.a;
-								var $temp$message = $author$project$Main$LinkClicked(
-									$elm$browser$Browser$Internal(postUrl)),
-									$temp$model = model;
-								message = $temp$message;
-								model = $temp$model;
-								continue update;
-							} else {
-								return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-							}
+							return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 						}
-					} else {
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 					}
-				case 'AboutMsg':
-					var msg = message.a;
-					var _v5 = model.page;
-					if (_v5.$ === 'About') {
-						var about = _v5.a;
-						return A2(
-							$author$project$Main$stepAbout,
-							model,
-							A2($author$project$Page$About$update, msg, about));
-					} else {
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-					}
-				default:
-					var msg = message.a;
-					var _v6 = model.page;
-					if (_v6.$ === 'Posts') {
-						var post = _v6.a;
-						return A2(
-							$author$project$Main$stepPost,
-							model,
-							A2($author$project$Page$Posts$update, msg, post));
-					} else {
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-					}
-			}
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'AboutMsg':
+				var msg = message.a;
+				var _v5 = model.page;
+				if (_v5.$ === 'About') {
+					var about = _v5.a;
+					return A2(
+						$author$project$Main$stepAbout,
+						model,
+						A2($author$project$Page$About$update, msg, about));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			default:
+				var msg = message.a;
+				var _v6 = model.page;
+				if (_v6.$ === 'Posts') {
+					var post = _v6.a;
+					return A2(
+						$author$project$Main$stepPost,
+						model,
+						A2($author$project$Page$Posts$update, msg, post));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $elm$browser$Browser$Document = F2(
@@ -7156,9 +7164,6 @@ var $author$project$Page$About$view = function (model) {
 					]))
 			]));
 };
-var $author$project$Page$Home$OnLatestPostPressed = function (a) {
-	return {$: 'OnLatestPostPressed', a: a};
-};
 var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
@@ -7203,15 +7208,21 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 							[
 								A2(
 								$elm$html$Html$h1,
+								_List_Nil,
 								_List_fromArray(
 									[
-										$elm$html$Html$Events$onClick(
-										$author$project$Page$Home$OnLatestPostPressed(
-											$elm$core$String$fromInt(lp.id)))
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('-> ' + lp.title)
+										A2(
+										$elm$html$Html$a,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$href(
+												'#/Posts/' + $elm$core$String$fromInt(lp.id)),
+												A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text('-> ' + lp.title)
+											]))
 									])),
 								A2(
 								$elm$html$Html$p,
