@@ -6683,6 +6683,8 @@ var $author$project$Main$postUrlWithId = function (postId) {
 		$author$project$Main$absoluteUrl(postId));
 };
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6756,12 +6758,9 @@ var $author$project$Page$Posts$Failure = {$: 'Failure'};
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Page$Posts$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'OnShareButtonPressed') {
-			var s = msg.a;
-			var d = A2($elm$core$Debug$log, s, '');
 			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		} else {
 			var result = msg.a;
@@ -6855,10 +6854,16 @@ var $author$project$Main$update = F2(
 				var _v6 = model.page;
 				if (_v6.$ === 'Posts') {
 					var post = _v6.a;
-					return A2(
-						$author$project$Main$stepPost,
-						model,
-						A2($author$project$Page$Posts$update, msg, post));
+					if (msg.$ === 'GotPostWithId') {
+						return A2(
+							$author$project$Main$stepPost,
+							model,
+							A2($author$project$Page$Posts$update, msg, post));
+					} else {
+						return _Utils_Tuple2(
+							model,
+							$author$project$Main$sendMessage('pepe'));
+					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
@@ -6869,7 +6874,6 @@ var $elm$browser$Browser$Document = F2(
 		return {body: body, title: title};
 	});
 var $elm$html$Html$br = _VirtualDom_node('br');
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -7256,9 +7260,7 @@ var $author$project$Page$Home$view = function (model) {
 			]),
 		$author$project$Page$Home$viewLatestsPosts(model));
 };
-var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
-	return {$: 'OnShareButtonPressed', a: a};
-};
+var $author$project$Page$Posts$OnShareButtonPressed = {$: 'OnShareButtonPressed'};
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
 var $author$project$Page$Posts$dualPagination = function (post) {
@@ -7380,7 +7382,7 @@ var $author$project$Page$Posts$viewPost = function (model) {
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text('That post doesn\'t exist!🤯')
+							$elm$html$Html$text('That post doesn\'t exist (yet)!🤯')
 						]))
 				]);
 		case 'Loading':
@@ -7443,8 +7445,7 @@ var $author$project$Page$Posts$viewPost = function (model) {
 										_List_fromArray(
 											[
 												$elm$html$Html$Attributes$src('src/assets/link.png'),
-												$elm$html$Html$Events$onClick(
-												$author$project$Page$Posts$OnShareButtonPressed('123')),
+												$elm$html$Html$Events$onClick($author$project$Page$Posts$OnShareButtonPressed),
 												$elm$html$Html$Attributes$width(16),
 												$elm$html$Html$Attributes$height(16),
 												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')

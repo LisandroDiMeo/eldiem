@@ -48,7 +48,7 @@ viewPost model =
             p [] [i [] [text post.summary]],
             p [] [text post.date]
             ] ++
-            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed "123"), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
+            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
             pagination post
 
 pagination : Post -> List (Html msg)
@@ -72,14 +72,12 @@ hasPreviousPosts : Post -> Bool
 hasPreviousPosts post = if post.id <= 1 then False else True
 -- UPDATE 
 
-type Msg = OnShareButtonPressed String | GotPostWithId (Result Http.Error Post) -- | OnNextPostButton Int
+type Msg = OnShareButtonPressed | GotPostWithId (Result Http.Error Post) -- | OnNextPostButton Int
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model = 
     case msg of 
-        OnShareButtonPressed s ->
-            let d = Debug.log s ""
-            in
+        OnShareButtonPressed ->
             (model, Cmd.none)
         GotPostWithId result -> 
             case result of 

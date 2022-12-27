@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
@@ -10,7 +10,7 @@ import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
 import Page.Home as Home exposing (Msg(..))
 import Page.About as About
-import Page.Posts as Posts
+import Page.Posts as Posts exposing (Msg(..))
 
 -- MAIN
 
@@ -38,6 +38,8 @@ type Page
     | About About.Model
     | Posts Posts.Model
     -- | Other
+
+port sendMessage : String -> Cmd msg
 
 -- SUBSCRIPTIONS
 
@@ -149,7 +151,10 @@ update message model =
 
         PostsMsg msg -> 
             case model.page of
-                Posts post -> stepPost model (Posts.update msg post)
+                Posts post ->
+                    case msg of
+                        GotPostWithId _ -> stepPost model (Posts.update msg post)
+                        OnShareButtonPressed -> (model, sendMessage "Current link copied to clipboard!")
                 _ -> (model, Cmd.none)
 
 stepHome : Model -> ( Home.Model, Cmd Home.Msg ) -> (Model, Cmd Msg)
