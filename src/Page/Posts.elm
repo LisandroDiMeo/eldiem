@@ -25,7 +25,7 @@ type alias Post =
         images: List (Maybe String)
     }
 
-type Model = Failure | Loading | Success Post
+type Model = Failure | Loading | Success Post | ShareButtonPressed Post String
 
 -- VIEW 
 
@@ -39,7 +39,8 @@ viewPost model =
             case image of
                 Nothing -> p [] [text content]
                 Just s -> div [] [p [] [text content], img [src s, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []]) 
-    in 
+        logi = Debug.log "Log View" model
+    in
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
@@ -48,7 +49,14 @@ viewPost model =
             p [] [i [] [text post.summary]],
             p [] [text post.date]
             ] ++
-            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
+            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed post), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
+            pagination post
+        ShareButtonPressed post _ -> ([
+            h2 [] [text post.title],
+            p [] [i [] [text post.summary]],
+            p [] [text post.date]
+            ] ++
+            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed post), width 16, height 16, style "padding-right" "8px"] [], text "Copied to clipboard!" ] ]) ++
             pagination post
 
 pagination : Post -> List (Html msg)
@@ -72,13 +80,15 @@ hasPreviousPosts : Post -> Bool
 hasPreviousPosts post = if post.id <= 1 then False else True
 -- UPDATE 
 
-type Msg = OnShareButtonPressed | GotPostWithId (Result Http.Error Post) -- | OnNextPostButton Int
+type Msg = OnShareButtonPressed Post | GotPostWithId (Result Http.Error Post)
 
 update : Msg -> Model -> (Model, Cmd msg)
-update msg model = 
+update msg model =
+    let logi = Debug.log "Log Update" msg
+    in
     case msg of 
-        OnShareButtonPressed ->
-            (model, Cmd.none)
+        OnShareButtonPressed post ->
+            (ShareButtonPressed post "", Cmd.none)
         GotPostWithId result -> 
             case result of 
                 Ok post -> (Success post, Cmd.none)

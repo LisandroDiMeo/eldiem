@@ -154,7 +154,7 @@ update message model =
                 Posts post ->
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
-                        OnShareButtonPressed -> (model, sendMessage "Current link copied to clipboard!")
+                        OnShareButtonPressed _ -> (model, sendMessage "Current link copied to clipboard!") -- No estoy haciendo update!
                 _ -> (model, Cmd.none)
 
 stepHome : Model -> ( Home.Model, Cmd Home.Msg ) -> (Model, Cmd Msg)

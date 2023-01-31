@@ -6755,13 +6755,22 @@ var $author$project$Page$Home$update = F2(
 		}
 	});
 var $author$project$Page$Posts$Failure = {$: 'Failure'};
+var $author$project$Page$Posts$ShareButtonPressed = F2(
+	function (a, b) {
+		return {$: 'ShareButtonPressed', a: a, b: b};
+	});
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
+var $elm$core$Debug$log = _Debug_log;
 var $author$project$Page$Posts$update = F2(
 	function (msg, model) {
+		var logi = A2($elm$core$Debug$log, 'Log Update', msg);
 		if (msg.$ === 'OnShareButtonPressed') {
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			var post = msg.a;
+			return _Utils_Tuple2(
+				A2($author$project$Page$Posts$ShareButtonPressed, post, ''),
+				$elm$core$Platform$Cmd$none);
 		} else {
 			var result = msg.a;
 			if (result.$ === 'Ok') {
@@ -6862,7 +6871,7 @@ var $author$project$Main$update = F2(
 					} else {
 						return _Utils_Tuple2(
 							model,
-							$author$project$Main$sendMessage('pepe'));
+							$author$project$Main$sendMessage('Current link copied to clipboard!'));
 					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -7260,7 +7269,9 @@ var $author$project$Page$Home$view = function (model) {
 			]),
 		$author$project$Page$Home$viewLatestsPosts(model));
 };
-var $author$project$Page$Posts$OnShareButtonPressed = {$: 'OnShareButtonPressed'};
+var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
+	return {$: 'OnShareButtonPressed', a: a};
+};
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
 var $author$project$Page$Posts$dualPagination = function (post) {
@@ -7373,6 +7384,7 @@ var $author$project$Page$Posts$viewPost = function (model) {
 						]));
 			}
 		});
+	var logi = A2($elm$core$Debug$log, 'Log View', model);
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
@@ -7396,6 +7408,66 @@ var $author$project$Page$Posts$viewPost = function (model) {
 							$elm$html$Html$text('Loading... 🔄')
 						]))
 				]);
+		case 'Success':
+			var post = model.a;
+			return _Utils_ap(
+				_Utils_ap(
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$h2,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(post.title)
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$i,
+									_List_Nil,
+									_List_fromArray(
+										[
+											$elm$html$Html$text(post.summary)
+										]))
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(post.date)
+								]))
+						]),
+					_Utils_ap(
+						postBody(
+							A2($author$project$Commons$Zip$zip, post.content, post.images)),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$img,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$src('src/assets/link.png'),
+												$elm$html$Html$Events$onClick(
+												$author$project$Page$Posts$OnShareButtonPressed(post)),
+												$elm$html$Html$Attributes$width(16),
+												$elm$html$Html$Attributes$height(16),
+												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
+											]),
+										_List_Nil),
+										$elm$html$Html$text('Share it!')
+									]))
+							]))),
+				$author$project$Page$Posts$pagination(post));
 		default:
 			var post = model.a;
 			return _Utils_ap(
@@ -7445,13 +7517,14 @@ var $author$project$Page$Posts$viewPost = function (model) {
 										_List_fromArray(
 											[
 												$elm$html$Html$Attributes$src('src/assets/link.png'),
-												$elm$html$Html$Events$onClick($author$project$Page$Posts$OnShareButtonPressed),
+												$elm$html$Html$Events$onClick(
+												$author$project$Page$Posts$OnShareButtonPressed(post)),
 												$elm$html$Html$Attributes$width(16),
 												$elm$html$Html$Attributes$height(16),
 												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
 											]),
 										_List_Nil),
-										$elm$html$Html$text('Share it!')
+										$elm$html$Html$text('Copied to clipboard!')
 									]))
 							]))),
 				$author$project$Page$Posts$pagination(post));
