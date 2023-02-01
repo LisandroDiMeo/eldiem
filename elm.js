@@ -5360,19 +5360,20 @@ var $elm$browser$Browser$application = _Browser_application;
 var $author$project$Main$Home = function (a) {
 	return {$: 'Home', a: a};
 };
-var $author$project$Page$Home$Loading = {$: 'Loading'};
-var $author$project$Main$NotFound = {$: 'NotFound'};
-var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Sciences 🖥️ at FCEN,  Universidad de Buenos Aires.' + ('%Currently I\'m part of a research internship at LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms 🧬.' + ('%Additionaly I work at Wolox part of Accenture as an Android Lead Developer 🤖.' + '%Beyond that, I really like music 🎵 (I play the guitar), photography 📷, and nature ⛰️.'));
 var $author$project$Page$About$Model = F2(
 	function (title, content) {
 		return {content: content, title: title};
 	});
+var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Sciences 🖥️ at FCEN,  Universidad de Buenos Aires.' + ('%Currently I\'m part of a research internship at LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms 🧬.' + ('%Additionaly I work at Wolox part of Accenture as an Android Lead Developer 🤖.' + '%Beyond that, I really like music 🎵 (I play the guitar), photography 📷, and nature ⛰️.'));
+var $author$project$Page$About$staticAbout = A2($author$project$Page$About$Model, '', $author$project$Page$About$aboutMe);
+var $author$project$Main$NotFound = {$: 'NotFound'};
 var $author$project$Page$About$init = F2(
 	function (title, content) {
 		return A2($author$project$Page$About$Model, title, content);
 	});
-var $author$project$Page$Home$GotLatestsPosts = function (a) {
-	return {$: 'GotLatestsPosts', a: a};
+var $author$project$Page$Home$Loading = {$: 'Loading'};
+var $author$project$Page$Home$GotLatestPosts = function (a) {
+	return {$: 'GotLatestPosts', a: a};
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
@@ -6177,16 +6178,16 @@ var $author$project$Page$Home$latestPostDecoder = A5(
 	A2($elm$json$Json$Decode$field, 'thumbnailResource', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$Page$Home$getLatestsPosts = $elm$http$Http$get(
+var $author$project$Page$Home$getLatestPosts = $elm$http$Http$get(
 	{
 		expect: A2(
 			$elm$http$Http$expectJson,
-			$author$project$Page$Home$GotLatestsPosts,
+			$author$project$Page$Home$GotLatestPosts,
 			$elm$json$Json$Decode$list($author$project$Page$Home$latestPostDecoder)),
 		url: 'src/posts/short/short_posts.json'
 	});
 var $author$project$Page$Home$init = function (_v0) {
-	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestsPosts);
+	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestPosts);
 };
 var $author$project$Page$Posts$Loading = {$: 'Loading'};
 var $author$project$Page$Posts$GotPostWithId = function (a) {
@@ -6525,10 +6526,13 @@ var $author$project$Main$stepAbout = F2(
 				}),
 			A2($elm$core$Platform$Cmd$map, $author$project$Main$AboutMsg, cmds));
 	});
-var $author$project$Main$HomeMsg = function (a) {
-	return {$: 'HomeMsg', a: a};
+var $author$project$Main$LatestPost = function (a) {
+	return {$: 'LatestPost', a: a};
 };
-var $author$project$Main$stepHome = F2(
+var $author$project$Main$LatestPostsMsg = function (a) {
+	return {$: 'LatestPostsMsg', a: a};
+};
+var $author$project$Main$stepLatestPosts = F2(
 	function (model, _v0) {
 		var home = _v0.a;
 		var cmds = _v0.b;
@@ -6536,9 +6540,9 @@ var $author$project$Main$stepHome = F2(
 			_Utils_update(
 				model,
 				{
-					page: $author$project$Main$Home(home)
+					page: $author$project$Main$LatestPost(home)
 				}),
-			A2($elm$core$Platform$Cmd$map, $author$project$Main$HomeMsg, cmds));
+			A2($elm$core$Platform$Cmd$map, $author$project$Main$LatestPostsMsg, cmds));
 	});
 var $author$project$Main$Posts = function (a) {
 	return {$: 'Posts', a: a};
@@ -6572,14 +6576,25 @@ var $author$project$Main$stepUrl = F2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$top,
 					A2(
-						$author$project$Main$stepHome,
+						$author$project$Main$stepAbout,
 						model,
-						$author$project$Page$Home$init(_Utils_Tuple0))),
+						_Utils_Tuple2(
+							A2($author$project$Page$About$init, 'Home', $author$project$Page$About$aboutMe),
+							$elm$core$Platform$Cmd$none))),
 					A2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$s('Home'),
 					A2(
-						$author$project$Main$stepHome,
+						$author$project$Main$stepAbout,
+						model,
+						_Utils_Tuple2(
+							A2($author$project$Page$About$init, 'Home', $author$project$Page$About$aboutMe),
+							$elm$core$Platform$Cmd$none))),
+					A2(
+					$author$project$Main$route,
+					$elm$url$Url$Parser$s('LatestPosts'),
+					A2(
+						$author$project$Main$stepLatestPosts,
 						model,
 						$author$project$Page$Home$init(_Utils_Tuple0))),
 					A2(
@@ -6643,7 +6658,7 @@ var $author$project$Main$init = F3(
 			url,
 			{
 				key: key,
-				page: $author$project$Main$Home($author$project$Page$Home$Loading)
+				page: $author$project$Main$Home($author$project$Page$About$staticAbout)
 			});
 	});
 var $author$project$Main$LinkCopied = function (a) {
@@ -6896,18 +6911,30 @@ var $author$project$Main$update = F2(
 			case 'HomeMsg':
 				var msg = message.a;
 				var _v2 = model.page;
-				if (_v2.$ === 'Home') {
-					var home = _v2.a;
-					if (msg.$ === 'GotLatestsPosts') {
+				if (_v2.$ === 'About') {
+					var about = _v2.a;
+					return A2(
+						$author$project$Main$stepAbout,
+						model,
+						A2($author$project$Page$About$update, msg, about));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'LatestPostsMsg':
+				var msg = message.a;
+				var _v3 = model.page;
+				if (_v3.$ === 'LatestPost') {
+					var home = _v3.a;
+					if (msg.$ === 'GotLatestPosts') {
 						return A2(
-							$author$project$Main$stepHome,
+							$author$project$Main$stepLatestPosts,
 							model,
 							A2($author$project$Page$Home$update, msg, home));
 					} else {
 						var postId = msg.a;
-						var _v4 = $author$project$Main$postUrlWithId(postId);
-						if (_v4.$ === 'Just') {
-							var postUrl = _v4.a;
+						var _v5 = $author$project$Main$postUrlWithId(postId);
+						if (_v5.$ === 'Just') {
+							var postUrl = _v5.a;
 							return A2(
 								$author$project$Main$stepPost,
 								model,
@@ -6925,9 +6952,9 @@ var $author$project$Main$update = F2(
 				}
 			case 'AboutMsg':
 				var msg = message.a;
-				var _v5 = model.page;
-				if (_v5.$ === 'About') {
-					var about = _v5.a;
+				var _v6 = model.page;
+				if (_v6.$ === 'About') {
+					var about = _v6.a;
 					return A2(
 						$author$project$Main$stepAbout,
 						model,
@@ -6937,9 +6964,9 @@ var $author$project$Main$update = F2(
 				}
 			case 'PostsMsg':
 				var msg = message.a;
-				var _v6 = model.page;
-				if (_v6.$ === 'Posts') {
-					var post = _v6.a;
+				var _v7 = model.page;
+				if (_v7.$ === 'Posts') {
+					var post = _v7.a;
 					var d = A2($elm$core$Debug$log, 'MainPostLog', post);
 					if (msg.$ === 'GotPostWithId') {
 						return A2(
@@ -7091,7 +7118,7 @@ var $author$project$Components$Footer$footer = A2(
 var $author$project$Main$navBarTabs = _List_fromArray(
 	[
 		{imageResource: 'finder.png', onPressed: $elm$core$Maybe$Nothing, title: 'Home'},
-		{imageResource: 'floppydisk.png', onPressed: $elm$core$Maybe$Nothing, title: 'Posts'},
+		{imageResource: 'floppydisk.png', onPressed: $elm$core$Maybe$Nothing, title: 'LatestPosts'},
 		{imageResource: 'coffee.png', onPressed: $elm$core$Maybe$Nothing, title: 'About'},
 		{imageResource: 'misc.png', onPressed: $elm$core$Maybe$Nothing, title: 'Other'}
 	]);
@@ -7283,7 +7310,7 @@ var $author$project$Page$Home$orderPosts = $elm$core$List$sortBy(
 	function (p) {
 		return (-1) * p.id;
 	});
-var $author$project$Page$Home$viewLatestsPosts = function (model) {
+var $author$project$Page$Home$viewLatestPosts = function (model) {
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
@@ -7308,7 +7335,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 						]))
 				]);
 		default:
-			var latestposts = model.a;
+			var latestPosts = model.a;
 			return A2(
 				$elm$core$List$map,
 				function (lp) {
@@ -7355,7 +7382,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 								_List_Nil)
 							]));
 				},
-				$author$project$Page$Home$orderPosts(latestposts));
+				$author$project$Page$Home$orderPosts(latestPosts));
 	}
 };
 var $author$project$Page$Home$view = function (model) {
@@ -7365,7 +7392,7 @@ var $author$project$Page$Home$view = function (model) {
 			[
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
-		$author$project$Page$Home$viewLatestsPosts(model));
+		$author$project$Page$Home$viewLatestPosts(model));
 };
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
@@ -7585,17 +7612,14 @@ var $author$project$Page$Posts$view = function (model) {
 var $author$project$Main$wrapperFor = function (page) {
 	switch (page.$) {
 		case 'Home':
-			var home = page.a;
+			var about = page.a;
 			return A2(
 				$elm$browser$Browser$Document,
 				'Home',
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						A2(
-						$elm$html$Html$map,
-						$author$project$Main$HomeMsg,
-						$author$project$Page$Home$view(home)),
+						$author$project$Page$About$view(about),
 						$author$project$Components$Footer$footer
 					]));
 		case 'NotFound':
@@ -7613,6 +7637,20 @@ var $author$project$Main$wrapperFor = function (page) {
 					[
 						$author$project$Main$header,
 						$author$project$Page$About$view(about),
+						$author$project$Components$Footer$footer
+					]));
+		case 'LatestPost':
+			var latestPosts = page.a;
+			return A2(
+				$elm$browser$Browser$Document,
+				'LatestPosts',
+				_List_fromArray(
+					[
+						$author$project$Main$header,
+						A2(
+						$elm$html$Html$map,
+						$author$project$Main$LatestPostsMsg,
+						$author$project$Page$Home$view(latestPosts)),
 						$author$project$Components$Footer$footer
 					]));
 		default:

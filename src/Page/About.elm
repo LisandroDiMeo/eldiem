@@ -11,6 +11,8 @@ type alias Model =
     , content : String
     }
 
+staticAbout = Model "" aboutMe
+
 init : String -> String -> Model
 init title content = Model title content
 
