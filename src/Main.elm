@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
+import Commons.EncodeMaybeString exposing (encodeMaybeString)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (string)
 import Url
@@ -12,7 +13,7 @@ import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
 import Page.Home as Home exposing (Msg(..))
 import Page.About as About
-import Page.Posts as Posts exposing (Model(..), Msg(..))
+import Page.Posts as Posts exposing (Model(..), Msg(..), encodePost, onShareButtonPressed, postDecoder)
 
 -- MAIN
 
@@ -94,7 +95,7 @@ stepUrl url model =
             ]
         fakeUrl = {
                     url | path = case url.fragment of
-                        Just s -> s
+                        Just str -> str
                         Nothing -> ""
                 }
     in
@@ -132,7 +133,6 @@ update message model =
         LinkClicked urlRequest ->
             case urlRequest of 
                 Browser.Internal url -> (model, Nav.pushUrl model.key (Url.toString url))
-
                 Browser.External href -> (model, Nav.load href)
 
         UrlChanged url ->
@@ -156,17 +156,18 @@ update message model =
         PostsMsg msg ->
             case model.page of
                 Posts post ->
+                    let d = Debug.log "MainPostLog" post
+                    in
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
                         OnShareButtonPressed _ ->
-                            -- stepPost model (Posts.update msg <| y post fafa)
-                            (model, sendMessage <| encodePost <| x (Posts.update msg (y post)))
+                            (model, sendMessage <| encodePost <| Tuple.first <| (Posts.update msg (onShareButtonPressed post)))
                 _ -> (model, Cmd.none)
         LinkCopied s ->
-            let post = Decode.decodeValue decodeArticle s
+            let post = Decode.decodeValue postDecoder s
             in
             case post of
-                Ok decodedPost -> stepPost model (Posts.update (OnShareButtonPressed decodedPost) <| ShareButtonPressed decodedPost "")
+                Ok decodedPost -> stepPost model (Posts.update (OnShareButtonPressed decodedPost) <| ShareButtonPressed decodedPost)
                 Err _ -> (model, Cmd.none)
 
 
@@ -178,53 +179,6 @@ stepAbout model (about, cmds) = ( { model | page = About about }, Cmd.map AboutM
 
 stepPost : Model -> ( Posts.Model, Cmd Posts.Msg ) -> (Model, Cmd Msg)
 stepPost model (post, cmds) = ( { model | page = Posts post }, Cmd.map PostsMsg cmds )
-
-x : (Posts.Model, Cmd msg) -> Posts.Model
-x (a,_) = a
-
-y : Posts.Model -> Posts.Model
-y p =
-    case p of
-        Success post -> ShareButtonPressed post ""
-        _ -> p
-
-encodePost : Posts.Model -> Encode.Value
-encodePost post =
-    case post of
-        ShareButtonPressed content _ ->
-            Encode.object
-                    [ ( "title", string content.title )
-                    , ( "summary", string content.summary )
-                    , ( "content", Encode.list string content.content )
-                    , ( "date", string content.date )
-                    , ( "id", Encode.int content.id )
-                    , ( "references", Encode.list string content.references )
-                    , ( "images", Encode.list encodeMaybeString content.images)
-                    ]
-        _ -> Encode.object []
-
-encodeMaybeString : Maybe String -> Encode.Value
-encodeMaybeString maybeString =
-    case maybeString of
-        Nothing ->
-            Encode.null
-
-        Just string ->
-            Encode.string string
-
-decodeArticle : Decode.Decoder Posts.Post
-decodeArticle =
-    Decode.map7 Posts.Post
-        (Decode.field "title" Decode.string)
-        (Decode.field "summary" Decode.string)
-        (Decode.field "content" (Decode.list Decode.string))
-        (Decode.field "date" Decode.string)
-        (Decode.field "id" Decode.int)
-        (Decode.field "references" (Decode.list Decode.string))
-        (Decode.field "images" (Decode.list (Decode.maybe Decode.string)))
-
-
-
 
 -- ROUTER 
 

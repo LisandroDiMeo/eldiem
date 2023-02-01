@@ -1,11 +1,13 @@
 module Page.Posts exposing (..)
 
+import Commons.EncodeMaybeString exposing (encodeMaybeString)
 import Html exposing (..)
 import Commons.Zip exposing (zip)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (..)
+import Json.Encode as Encode
 
 -- INIT
 
@@ -25,7 +27,7 @@ type alias Post =
         images: List (Maybe String)
     }
 
-type Model = Failure | Loading | Success Post | ShareButtonPressed Post String
+type Model = Failure | Loading | Success Post | ShareButtonPressed Post
 
 -- VIEW 
 
@@ -38,25 +40,35 @@ viewPost model =
     let postBody = List.map (\(content, image) -> 
             case image of
                 Nothing -> p [] [text content]
-                Just s -> div [] [p [] [text content], img [src s, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []])
+                Just imgSrc -> div [] [p [] [text content], img [src imgSrc, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []])
     in
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
-        Success post -> ([
-            h2 [] [text post.title],
-            p [] [i [] [text post.summary]],
-            p [] [text post.date]
-            ] ++
-            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed post), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
-            pagination post
-        ShareButtonPressed post _ -> ([
-            h2 [] [text post.title],
-            p [] [i [] [text post.summary]],
-            p [] [text post.date]
-            ] ++
-            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed post), width 16, height 16, style "padding-right" "8px"] [], text "Copied to clipboard!" ] ]) ++
-            pagination post
+        Success post -> buildPostBody postBody post False
+        ShareButtonPressed post -> buildPostBody postBody post True
+
+buildPostBody : (List (String, Maybe String) -> List (Html Msg)) -> Post -> Bool -> List (Html Msg)
+buildPostBody contentAndImagesMapper post linkCopied =
+    let zippedTextWithImages = zip post.content post.images
+        postContentWithImages = contentAndImagesMapper zippedTextWithImages
+        shareButtonText = if linkCopied then "Copied to clipboard!" else "Share it!"
+    in
+    [
+        h2 [] [text post.title],
+        p [] [i [] [text post.summary]],
+        p [] [text post.date]
+    ]
+    ++ postContentWithImages
+    ++ [ p [] [
+                img [src "src/assets/link.png"
+                , onClick (OnShareButtonPressed post)
+                , width 16
+                , height 16
+                , style "padding-right" "8px"
+                ] [], text shareButtonText ] ]
+    ++ pagination post
+
 
 pagination : Post -> List (Html msg)
 pagination post = [
@@ -77,6 +89,7 @@ singlePagination post = [
 
 hasPreviousPosts : Post -> Bool
 hasPreviousPosts post = if post.id <= 1 then False else True
+
 -- UPDATE 
 
 type Msg = OnShareButtonPressed Post | GotPostWithId (Result Http.Error Post)
@@ -85,7 +98,7 @@ update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
     case msg of 
         OnShareButtonPressed post ->
-            (ShareButtonPressed post "", Cmd.none)
+            (ShareButtonPressed post, Cmd.none)
         GotPostWithId result -> 
             case result of 
                 Ok post -> (Success post, Cmd.none)
@@ -101,6 +114,14 @@ getPostWithId id = Http.get
 postIdToRealId : Int -> String
 postIdToRealId id = String.fromInt id |> (\rid -> if (String.length rid < 3) then (if (String.length rid) == 1 then "00" else "0") ++ rid else rid) 
 
+onShareButtonPressed : Model -> Model
+onShareButtonPressed postToShareModel =
+    case postToShareModel of
+        Success post -> ShareButtonPressed post
+        _ -> postToShareModel
+
+-- Decoders/Encoders
+
 postDecoder : Decoder Post
 postDecoder = 
     map7 Post
@@ -112,3 +133,17 @@ postDecoder =
         (field "references" (Json.Decode.list string))
         (field "images" (Json.Decode.list (maybe string)))
 
+encodePost : Model -> Encode.Value
+encodePost post =
+    case post of
+        ShareButtonPressed content ->
+            Encode.object
+                    [ ( "title", Encode.string content.title )
+                    , ( "summary", Encode.string content.summary )
+                    , ( "content", Encode.list Encode.string content.content )
+                    , ( "date", Encode.string content.date )
+                    , ( "id", Encode.int content.id )
+                    , ( "references", Encode.list Encode.string content.references )
+                    , ( "images", Encode.list encodeMaybeString content.images)
+                    ]
+        _ -> Encode.object []

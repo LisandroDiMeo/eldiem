@@ -6617,8 +6617,8 @@ var $author$project$Main$stepUrl = F2(
 				path: function () {
 					var _v1 = url.fragment;
 					if (_v1.$ === 'Just') {
-						var s = _v1.a;
-						return s;
+						var str = _v1.a;
+						return str;
 					} else {
 						return '';
 					}
@@ -6657,34 +6657,13 @@ var $author$project$Main$subscriptions = function (_v0) {
 var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
 	return {$: 'OnShareButtonPressed', a: a};
 };
-var $author$project$Page$Posts$ShareButtonPressed = F2(
-	function (a, b) {
-		return {$: 'ShareButtonPressed', a: a, b: b};
-	});
-var $author$project$Main$decodeArticle = A8(
-	$elm$json$Json$Decode$map7,
-	$author$project$Page$Posts$Post,
-	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'summary', $elm$json$Json$Decode$string),
-	A2(
-		$elm$json$Json$Decode$field,
-		'content',
-		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
-	A2($elm$json$Json$Decode$field, 'date', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
-	A2(
-		$elm$json$Json$Decode$field,
-		'references',
-		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'images',
-		$elm$json$Json$Decode$list(
-			$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string))));
+var $author$project$Page$Posts$ShareButtonPressed = function (a) {
+	return {$: 'ShareButtonPressed', a: a};
+};
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $elm$json$Json$Encode$null = _Json_encodeNull;
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$encodeMaybeString = function (maybeString) {
+var $author$project$Commons$EncodeMaybeString$encodeMaybeString = function (maybeString) {
 	if (maybeString.$ === 'Nothing') {
 		return $elm$json$Json$Encode$null;
 	} else {
@@ -6715,7 +6694,7 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
-var $author$project$Main$encodePost = function (post) {
+var $author$project$Page$Posts$encodePost = function (post) {
 	if (post.$ === 'ShareButtonPressed') {
 		var content = post.a;
 		return $elm$json$Json$Encode$object(
@@ -6741,13 +6720,22 @@ var $author$project$Main$encodePost = function (post) {
 					A2($elm$json$Json$Encode$list, $elm$json$Json$Encode$string, content.references)),
 					_Utils_Tuple2(
 					'images',
-					A2($elm$json$Json$Encode$list, $author$project$Main$encodeMaybeString, content.images))
+					A2($elm$json$Json$Encode$list, $author$project$Commons$EncodeMaybeString$encodeMaybeString, content.images))
 				]));
 	} else {
 		return $elm$json$Json$Encode$object(_List_Nil);
 	}
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $elm$core$Debug$log = _Debug_log;
+var $author$project$Page$Posts$onShareButtonPressed = function (postToShareModel) {
+	if (postToShareModel.$ === 'Success') {
+		var post = postToShareModel.a;
+		return $author$project$Page$Posts$ShareButtonPressed(post);
+	} else {
+		return postToShareModel;
+	}
+};
 var $elm$url$Url$Builder$toQueryPair = function (_v0) {
 	var key = _v0.a;
 	var value = _v0.b;
@@ -6858,7 +6846,7 @@ var $author$project$Page$Posts$update = F2(
 		if (msg.$ === 'OnShareButtonPressed') {
 			var post = msg.a;
 			return _Utils_Tuple2(
-				A2($author$project$Page$Posts$ShareButtonPressed, post, ''),
+				$author$project$Page$Posts$ShareButtonPressed(post),
 				$elm$core$Platform$Cmd$none);
 		} else {
 			var result = msg.a;
@@ -6881,18 +6869,6 @@ var $elm$core$Maybe$withDefault = F2(
 			return _default;
 		}
 	});
-var $author$project$Main$x = function (_v0) {
-	var a = _v0.a;
-	return a;
-};
-var $author$project$Main$y = function (p) {
-	if (p.$ === 'Success') {
-		var post = p.a;
-		return A2($author$project$Page$Posts$ShareButtonPressed, post, '');
-	} else {
-		return p;
-	}
-};
 var $author$project$Main$update = F2(
 	function (message, model) {
 		switch (message.$) {
@@ -6964,6 +6940,7 @@ var $author$project$Main$update = F2(
 				var _v6 = model.page;
 				if (_v6.$ === 'Posts') {
 					var post = _v6.a;
+					var d = A2($elm$core$Debug$log, 'MainPostLog', post);
 					if (msg.$ === 'GotPostWithId') {
 						return A2(
 							$author$project$Main$stepPost,
@@ -6973,19 +6950,18 @@ var $author$project$Main$update = F2(
 						return _Utils_Tuple2(
 							model,
 							$author$project$Main$sendMessage(
-								$author$project$Main$encodePost(
-									$author$project$Main$x(
-										A2(
-											$author$project$Page$Posts$update,
-											msg,
-											$author$project$Main$y(post))))));
+								$author$project$Page$Posts$encodePost(
+									A2(
+										$author$project$Page$Posts$update,
+										msg,
+										$author$project$Page$Posts$onShareButtonPressed(post)).a)));
 					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
 			default:
 				var s = message.a;
-				var post = A2($elm$json$Json$Decode$decodeValue, $author$project$Main$decodeArticle, s);
+				var post = A2($elm$json$Json$Decode$decodeValue, $author$project$Page$Posts$postDecoder, s);
 				if (post.$ === 'Ok') {
 					var decodedPost = post.a;
 					return A2(
@@ -6994,7 +6970,7 @@ var $author$project$Main$update = F2(
 						A2(
 							$author$project$Page$Posts$update,
 							$author$project$Page$Posts$OnShareButtonPressed(decodedPost),
-							A2($author$project$Page$Posts$ShareButtonPressed, decodedPost, '')));
+							$author$project$Page$Posts$ShareButtonPressed(decodedPost)));
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
@@ -7462,6 +7438,69 @@ var $author$project$Commons$Zip$zip = F2(
 	function (l1, l2) {
 		return A3($elm$core$List$map2, $elm$core$Tuple$pair, l1, l2);
 	});
+var $author$project$Page$Posts$buildPostBody = F3(
+	function (contentAndImagesMapper, post, linkCopied) {
+		var zippedTextWithImages = A2($author$project$Commons$Zip$zip, post.content, post.images);
+		var shareButtonText = linkCopied ? 'Copied to clipboard!' : 'Share it!';
+		var postContentWithImages = contentAndImagesMapper(zippedTextWithImages);
+		return _Utils_ap(
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$h2,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(post.title)
+						])),
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$i,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(post.summary)
+								]))
+						])),
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(post.date)
+						]))
+				]),
+			_Utils_ap(
+				postContentWithImages,
+				_Utils_ap(
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$img,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$src('src/assets/link.png'),
+											$elm$html$Html$Events$onClick(
+											$author$project$Page$Posts$OnShareButtonPressed(post)),
+											$elm$html$Html$Attributes$width(16),
+											$elm$html$Html$Attributes$height(16),
+											A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
+										]),
+									_List_Nil),
+									$elm$html$Html$text(shareButtonText)
+								]))
+						]),
+					$author$project$Page$Posts$pagination(post))));
+	});
 var $author$project$Page$Posts$viewPost = function (model) {
 	var postBody = $elm$core$List$map(
 		function (_v1) {
@@ -7476,7 +7515,7 @@ var $author$project$Page$Posts$viewPost = function (model) {
 							$elm$html$Html$text(content)
 						]));
 			} else {
-				var s = image.a;
+				var imgSrc = image.a;
 				return A2(
 					$elm$html$Html$div,
 					_List_Nil,
@@ -7493,7 +7532,7 @@ var $author$project$Page$Posts$viewPost = function (model) {
 							$elm$html$Html$img,
 							_List_fromArray(
 								[
-									$elm$html$Html$Attributes$src(s),
+									$elm$html$Html$Attributes$src(imgSrc),
 									$elm$html$Html$Attributes$width(128),
 									$elm$html$Html$Attributes$height(128),
 									A2($elm$html$Html$Attributes$style, 'display', 'block'),
@@ -7528,124 +7567,10 @@ var $author$project$Page$Posts$viewPost = function (model) {
 				]);
 		case 'Success':
 			var post = model.a;
-			return _Utils_ap(
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$h2,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.title)
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									A2(
-									$elm$html$Html$i,
-									_List_Nil,
-									_List_fromArray(
-										[
-											$elm$html$Html$text(post.summary)
-										]))
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.date)
-								]))
-						]),
-					_Utils_ap(
-						postBody(
-							A2($author$project$Commons$Zip$zip, post.content, post.images)),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$p,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$img,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$src('src/assets/link.png'),
-												$elm$html$Html$Events$onClick(
-												$author$project$Page$Posts$OnShareButtonPressed(post)),
-												$elm$html$Html$Attributes$width(16),
-												$elm$html$Html$Attributes$height(16),
-												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-											]),
-										_List_Nil),
-										$elm$html$Html$text('Share it!')
-									]))
-							]))),
-				$author$project$Page$Posts$pagination(post));
+			return A3($author$project$Page$Posts$buildPostBody, postBody, post, false);
 		default:
 			var post = model.a;
-			return _Utils_ap(
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$h2,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.title)
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									A2(
-									$elm$html$Html$i,
-									_List_Nil,
-									_List_fromArray(
-										[
-											$elm$html$Html$text(post.summary)
-										]))
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.date)
-								]))
-						]),
-					_Utils_ap(
-						postBody(
-							A2($author$project$Commons$Zip$zip, post.content, post.images)),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$p,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$img,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$src('src/assets/link.png'),
-												$elm$html$Html$Events$onClick(
-												$author$project$Page$Posts$OnShareButtonPressed(post)),
-												$elm$html$Html$Attributes$width(16),
-												$elm$html$Html$Attributes$height(16),
-												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-											]),
-										_List_Nil),
-										$elm$html$Html$text('Copied to clipboard!')
-									]))
-							]))),
-				$author$project$Page$Posts$pagination(post));
+			return A3($author$project$Page$Posts$buildPostBody, postBody, post, true);
 	}
 };
 var $author$project$Page$Posts$view = function (model) {
