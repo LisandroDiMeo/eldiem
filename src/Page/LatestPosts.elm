@@ -1,4 +1,4 @@
-module Page.Home exposing
+module Page.LatestPosts exposing
   ( Model (..)
   , init
   , Msg (..)

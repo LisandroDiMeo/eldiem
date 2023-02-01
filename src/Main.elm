@@ -11,7 +11,7 @@ import Url.Parser exposing (Parser, (</>), int, oneOf, s, parse)
 import Html
 import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
-import Page.Home as Home exposing (Msg(..))
+import Page.LatestPosts as LatestPosts exposing (Msg(..))
 import Page.About as About exposing (staticAbout)
 import Page.Posts as Posts exposing (Model(..), Msg(..), encodePost, onShareButtonPressed, postDecoder)
 
@@ -38,9 +38,8 @@ type alias Model =
 type Page 
     = Home About.Model
     | NotFound
-    | About About.Model
     | Posts Posts.Model
-    | LatestPost Home.Model
+    | LatestPost LatestPosts.Model
     -- | Other
 
 port sendMessage : (Encode.Value) -> Cmd msg
@@ -60,7 +59,6 @@ navBarTabs : List (NavbarTab msg)
 navBarTabs = [
         {title = "Home", imageResource = "finder.png", onPressed = Nothing},
         {title = "LatestPosts", imageResource = "floppydisk.png", onPressed = Nothing},
-        {title = "About", imageResource = "coffee.png", onPressed = Nothing},
         {title = "Other", imageResource = "misc.png", onPressed = Nothing}
     ]
 
@@ -73,8 +71,7 @@ wrapperFor page
     case page of
         Home about -> Browser.Document "Home" ([header, About.view about, footer])
         NotFound -> Browser.Document "NotFound" ([header, footer])
-        About about -> Browser.Document "About" ([header, About.view about, footer])
-        LatestPost latestPosts -> Browser.Document "LatestPosts" ([header, Home.view latestPosts |> Html.map LatestPostsMsg, footer])
+        LatestPost latestPosts -> Browser.Document "LatestPosts" ([header, LatestPosts.view latestPosts |> Html.map LatestPostsMsg, footer])
         Posts post -> Browser.Document "Post" ([header, Posts.view post |> Html.map PostsMsg, footer])
 
 -- INIT
@@ -89,10 +86,9 @@ init _ url key =
 stepUrl : Url.Url -> Model -> (Model, Cmd Msg)
 stepUrl url model =
     let parser = oneOf [
-            route Url.Parser.top (stepAbout model (About.init "Home" About.aboutMe, Cmd.none))
-            , route (s "Home") (stepAbout model (About.init "Home" About.aboutMe, Cmd.none))
-            , route (s "LatestPosts") (stepLatestPosts model (Home.init ()))
-            , route (s "About") (stepAbout model (About.init "About" About.aboutMe, Cmd.none))
+            route Url.Parser.top (stepHome model (About.init "Home" About.aboutMe, Cmd.none))
+            , route (s "Home") (stepHome model (About.init "Home" About.aboutMe, Cmd.none))
+            , route (s "LatestPosts") (stepLatestPosts model (LatestPosts.init ()))
             , route (s "Posts" </> int) (\id -> stepPost model (Posts.init (id)))
             , route (s "Posts") (stepPost model (Posts.init (1)))
             ]
@@ -117,8 +113,7 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | HomeMsg About.Msg
-    | AboutMsg About.Msg
-    | LatestPostsMsg Home.Msg
+    | LatestPostsMsg LatestPosts.Msg
     | PostsMsg Posts.Msg
     | LinkCopied Encode.Value
 
@@ -144,22 +139,17 @@ update message model =
 
         HomeMsg msg ->
             case model.page of
-                            About about -> stepAbout model (About.update msg about)
+                            Home about -> stepHome model (About.update msg about)
                             _ -> (model, Cmd.none)
 
         LatestPostsMsg msg ->
             case model.page of
                 LatestPost home ->
                     case msg of
-                        GotLatestPosts _ -> stepLatestPosts model (Home.update msg home)
+                        GotLatestPosts _ -> stepLatestPosts model (LatestPosts.update msg home)
                         OnLatestPostPressed postId -> case postUrlWithId <| postId of
                                                             Just postUrl -> stepPost model (Posts.init <| Maybe.withDefault 0 <| String.toInt postId) -- update (LinkClicked (Browser.Internal postUrl)) model
                                                             Nothing -> (model, Cmd.none)
-                _ -> (model, Cmd.none)
-
-        AboutMsg msg -> 
-            case model.page of 
-                About about -> stepAbout model (About.update msg about)
                 _ -> (model, Cmd.none)
 
         PostsMsg msg ->
@@ -172,8 +162,9 @@ update message model =
                         OnShareButtonPressed _ ->
                             (model, sendMessage <| encodePost <| Tuple.first <| (Posts.update msg (onShareButtonPressed post)))
                 _ -> (model, Cmd.none)
-        LinkCopied s ->
-            let post = Decode.decodeValue postDecoder s
+
+        LinkCopied json ->
+            let post = Decode.decodeValue postDecoder json
             in
             case post of
                 Ok decodedPost -> stepPost model (Posts.update (OnShareButtonPressed decodedPost) <| ShareButtonPressed decodedPost)
@@ -181,13 +172,10 @@ update message model =
 
 
 stepHome : Model -> ( About.Model, Cmd About.Msg ) -> (Model, Cmd Msg)
-stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map AboutMsg cmds )
+stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map HomeMsg cmds )
 
-stepLatestPosts : Model -> ( Home.Model, Cmd Home.Msg ) -> (Model, Cmd Msg)
+stepLatestPosts : Model -> ( LatestPosts.Model, Cmd LatestPosts.Msg ) -> (Model, Cmd Msg)
 stepLatestPosts model (home, cmds) = ( {model | page = LatestPost home}, Cmd.map LatestPostsMsg cmds )
-
-stepAbout : Model -> ( About.Model, Cmd About.Msg ) -> (Model, Cmd Msg)
-stepAbout model (about, cmds) = ( { model | page = About about }, Cmd.map AboutMsg cmds )
 
 stepPost : Model -> ( Posts.Model, Cmd Posts.Msg ) -> (Model, Cmd Msg)
 stepPost model (post, cmds) = ( { model | page = Posts post }, Cmd.map PostsMsg cmds )

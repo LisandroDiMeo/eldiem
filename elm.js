@@ -5371,8 +5371,8 @@ var $author$project$Page$About$init = F2(
 	function (title, content) {
 		return A2($author$project$Page$About$Model, title, content);
 	});
-var $author$project$Page$Home$Loading = {$: 'Loading'};
-var $author$project$Page$Home$GotLatestPosts = function (a) {
+var $author$project$Page$LatestPosts$Loading = {$: 'Loading'};
+var $author$project$Page$LatestPosts$GotLatestPosts = function (a) {
 	return {$: 'GotLatestPosts', a: a};
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
@@ -6162,7 +6162,7 @@ var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$Page$Home$LatestPost = F4(
+var $author$project$Page$LatestPosts$LatestPost = F4(
 	function (title, shortText, thumbnailResource, id) {
 		return {id: id, shortText: shortText, thumbnailResource: thumbnailResource, title: title};
 	});
@@ -6170,24 +6170,24 @@ var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$map4 = _Json_map4;
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Page$Home$latestPostDecoder = A5(
+var $author$project$Page$LatestPosts$latestPostDecoder = A5(
 	$elm$json$Json$Decode$map4,
-	$author$project$Page$Home$LatestPost,
+	$author$project$Page$LatestPosts$LatestPost,
 	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'shortText', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'thumbnailResource', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$Page$Home$getLatestPosts = $elm$http$Http$get(
+var $author$project$Page$LatestPosts$getLatestPosts = $elm$http$Http$get(
 	{
 		expect: A2(
 			$elm$http$Http$expectJson,
-			$author$project$Page$Home$GotLatestPosts,
-			$elm$json$Json$Decode$list($author$project$Page$Home$latestPostDecoder)),
+			$author$project$Page$LatestPosts$GotLatestPosts,
+			$elm$json$Json$Decode$list($author$project$Page$LatestPosts$latestPostDecoder)),
 		url: 'src/posts/short/short_posts.json'
 	});
-var $author$project$Page$Home$init = function (_v0) {
-	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestPosts);
+var $author$project$Page$LatestPosts$init = function (_v0) {
+	return _Utils_Tuple2($author$project$Page$LatestPosts$Loading, $author$project$Page$LatestPosts$getLatestPosts);
 };
 var $author$project$Page$Posts$Loading = {$: 'Loading'};
 var $author$project$Page$Posts$GotPostWithId = function (a) {
@@ -6507,24 +6507,21 @@ var $elm$url$Url$Parser$slash = F2(
 					parseBefore(state));
 			});
 	});
-var $author$project$Main$About = function (a) {
-	return {$: 'About', a: a};
-};
-var $author$project$Main$AboutMsg = function (a) {
-	return {$: 'AboutMsg', a: a};
+var $author$project$Main$HomeMsg = function (a) {
+	return {$: 'HomeMsg', a: a};
 };
 var $elm$core$Platform$Cmd$map = _Platform_map;
-var $author$project$Main$stepAbout = F2(
+var $author$project$Main$stepHome = F2(
 	function (model, _v0) {
-		var about = _v0.a;
+		var home = _v0.a;
 		var cmds = _v0.b;
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
 				{
-					page: $author$project$Main$About(about)
+					page: $author$project$Main$Home(home)
 				}),
-			A2($elm$core$Platform$Cmd$map, $author$project$Main$AboutMsg, cmds));
+			A2($elm$core$Platform$Cmd$map, $author$project$Main$HomeMsg, cmds));
 	});
 var $author$project$Main$LatestPost = function (a) {
 	return {$: 'LatestPost', a: a};
@@ -6576,7 +6573,7 @@ var $author$project$Main$stepUrl = F2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$top,
 					A2(
-						$author$project$Main$stepAbout,
+						$author$project$Main$stepHome,
 						model,
 						_Utils_Tuple2(
 							A2($author$project$Page$About$init, 'Home', $author$project$Page$About$aboutMe),
@@ -6585,7 +6582,7 @@ var $author$project$Main$stepUrl = F2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$s('Home'),
 					A2(
-						$author$project$Main$stepAbout,
+						$author$project$Main$stepHome,
 						model,
 						_Utils_Tuple2(
 							A2($author$project$Page$About$init, 'Home', $author$project$Page$About$aboutMe),
@@ -6596,16 +6593,7 @@ var $author$project$Main$stepUrl = F2(
 					A2(
 						$author$project$Main$stepLatestPosts,
 						model,
-						$author$project$Page$Home$init(_Utils_Tuple0))),
-					A2(
-					$author$project$Main$route,
-					$elm$url$Url$Parser$s('About'),
-					A2(
-						$author$project$Main$stepAbout,
-						model,
-						_Utils_Tuple2(
-							A2($author$project$Page$About$init, 'About', $author$project$Page$About$aboutMe),
-							$elm$core$Platform$Cmd$none))),
+						$author$project$Page$LatestPosts$init(_Utils_Tuple0))),
 					A2(
 					$author$project$Main$route,
 					A2(
@@ -6831,11 +6819,11 @@ var $author$project$Page$About$update = F2(
 	function (_v0, model) {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	});
-var $author$project$Page$Home$Failure = {$: 'Failure'};
-var $author$project$Page$Home$Success = function (a) {
+var $author$project$Page$LatestPosts$Failure = {$: 'Failure'};
+var $author$project$Page$LatestPosts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $author$project$Page$Home$update = F2(
+var $author$project$Page$LatestPosts$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'OnLatestPostPressed') {
 			var postId = msg.a;
@@ -6845,10 +6833,10 @@ var $author$project$Page$Home$update = F2(
 			if (result.$ === 'Ok') {
 				var lp = result.a;
 				return _Utils_Tuple2(
-					$author$project$Page$Home$Success(lp),
+					$author$project$Page$LatestPosts$Success(lp),
 					$elm$core$Platform$Cmd$none);
 			} else {
-				return _Utils_Tuple2($author$project$Page$Home$Failure, $elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2($author$project$Page$LatestPosts$Failure, $elm$core$Platform$Cmd$none);
 			}
 		}
 	});
@@ -6911,10 +6899,10 @@ var $author$project$Main$update = F2(
 			case 'HomeMsg':
 				var msg = message.a;
 				var _v2 = model.page;
-				if (_v2.$ === 'About') {
+				if (_v2.$ === 'Home') {
 					var about = _v2.a;
 					return A2(
-						$author$project$Main$stepAbout,
+						$author$project$Main$stepHome,
 						model,
 						A2($author$project$Page$About$update, msg, about));
 				} else {
@@ -6929,7 +6917,7 @@ var $author$project$Main$update = F2(
 						return A2(
 							$author$project$Main$stepLatestPosts,
 							model,
-							A2($author$project$Page$Home$update, msg, home));
+							A2($author$project$Page$LatestPosts$update, msg, home));
 					} else {
 						var postId = msg.a;
 						var _v5 = $author$project$Main$postUrlWithId(postId);
@@ -6950,23 +6938,11 @@ var $author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
-			case 'AboutMsg':
-				var msg = message.a;
-				var _v6 = model.page;
-				if (_v6.$ === 'About') {
-					var about = _v6.a;
-					return A2(
-						$author$project$Main$stepAbout,
-						model,
-						A2($author$project$Page$About$update, msg, about));
-				} else {
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
 			case 'PostsMsg':
 				var msg = message.a;
-				var _v7 = model.page;
-				if (_v7.$ === 'Posts') {
-					var post = _v7.a;
+				var _v6 = model.page;
+				if (_v6.$ === 'Posts') {
+					var post = _v6.a;
 					var d = A2($elm$core$Debug$log, 'MainPostLog', post);
 					if (msg.$ === 'GotPostWithId') {
 						return A2(
@@ -6987,8 +6963,8 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
 			default:
-				var s = message.a;
-				var post = A2($elm$json$Json$Decode$decodeValue, $author$project$Page$Posts$postDecoder, s);
+				var json = message.a;
+				var post = A2($elm$json$Json$Decode$decodeValue, $author$project$Page$Posts$postDecoder, json);
 				if (post.$ === 'Ok') {
 					var decodedPost = post.a;
 					return A2(
@@ -7119,7 +7095,6 @@ var $author$project$Main$navBarTabs = _List_fromArray(
 	[
 		{imageResource: 'finder.png', onPressed: $elm$core$Maybe$Nothing, title: 'Home'},
 		{imageResource: 'floppydisk.png', onPressed: $elm$core$Maybe$Nothing, title: 'LatestPosts'},
-		{imageResource: 'coffee.png', onPressed: $elm$core$Maybe$Nothing, title: 'About'},
 		{imageResource: 'misc.png', onPressed: $elm$core$Maybe$Nothing, title: 'Other'}
 	]);
 var $elm$html$Html$nav = _VirtualDom_node('nav');
@@ -7306,11 +7281,11 @@ var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
 var $elm$core$List$sortBy = _List_sortBy;
-var $author$project$Page$Home$orderPosts = $elm$core$List$sortBy(
+var $author$project$Page$LatestPosts$orderPosts = $elm$core$List$sortBy(
 	function (p) {
 		return (-1) * p.id;
 	});
-var $author$project$Page$Home$viewLatestPosts = function (model) {
+var $author$project$Page$LatestPosts$viewLatestPosts = function (model) {
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
@@ -7382,17 +7357,17 @@ var $author$project$Page$Home$viewLatestPosts = function (model) {
 								_List_Nil)
 							]));
 				},
-				$author$project$Page$Home$orderPosts(latestPosts));
+				$author$project$Page$LatestPosts$orderPosts(latestPosts));
 	}
 };
-var $author$project$Page$Home$view = function (model) {
+var $author$project$Page$LatestPosts$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
-		$author$project$Page$Home$viewLatestPosts(model));
+		$author$project$Page$LatestPosts$viewLatestPosts(model));
 };
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');
@@ -7628,17 +7603,6 @@ var $author$project$Main$wrapperFor = function (page) {
 				'NotFound',
 				_List_fromArray(
 					[$author$project$Main$header, $author$project$Components$Footer$footer]));
-		case 'About':
-			var about = page.a;
-			return A2(
-				$elm$browser$Browser$Document,
-				'About',
-				_List_fromArray(
-					[
-						$author$project$Main$header,
-						$author$project$Page$About$view(about),
-						$author$project$Components$Footer$footer
-					]));
 		case 'LatestPost':
 			var latestPosts = page.a;
 			return A2(
@@ -7650,7 +7614,7 @@ var $author$project$Main$wrapperFor = function (page) {
 						A2(
 						$elm$html$Html$map,
 						$author$project$Main$LatestPostsMsg,
-						$author$project$Page$Home$view(latestPosts)),
+						$author$project$Page$LatestPosts$view(latestPosts)),
 						$author$project$Components$Footer$footer
 					]));
 		default:
