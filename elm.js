@@ -6649,12 +6649,105 @@ var $author$project$Main$init = F3(
 var $author$project$Main$LinkCopied = function (a) {
 	return {$: 'LinkCopied', a: a};
 };
-var $author$project$Main$messageReceiver = _Platform_incomingPort('messageReceiver', $elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$value = _Json_decodeValue;
+var $author$project$Main$messageReceiver = _Platform_incomingPort('messageReceiver', $elm$json$Json$Decode$value);
 var $author$project$Main$subscriptions = function (_v0) {
 	return $author$project$Main$messageReceiver($author$project$Main$LinkCopied);
 };
+var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
+	return {$: 'OnShareButtonPressed', a: a};
+};
+var $author$project$Page$Posts$ShareButtonPressed = F2(
+	function (a, b) {
+		return {$: 'ShareButtonPressed', a: a, b: b};
+	});
+var $author$project$Main$decodeArticle = A8(
+	$elm$json$Json$Decode$map7,
+	$author$project$Page$Posts$Post,
+	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'summary', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'content',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+	A2($elm$json$Json$Decode$field, 'date', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
+	A2(
+		$elm$json$Json$Decode$field,
+		'references',
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'images',
+		$elm$json$Json$Decode$list(
+			$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string))));
+var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $elm$json$Json$Encode$null = _Json_encodeNull;
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Main$encodeMaybeString = function (maybeString) {
+	if (maybeString.$ === 'Nothing') {
+		return $elm$json$Json$Encode$null;
+	} else {
+		var string = maybeString.a;
+		return $elm$json$Json$Encode$string(string);
+	}
+};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $author$project$Main$encodePost = function (post) {
+	if (post.$ === 'ShareButtonPressed') {
+		var content = post.a;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'title',
+					$elm$json$Json$Encode$string(content.title)),
+					_Utils_Tuple2(
+					'summary',
+					$elm$json$Json$Encode$string(content.summary)),
+					_Utils_Tuple2(
+					'content',
+					A2($elm$json$Json$Encode$list, $elm$json$Json$Encode$string, content.content)),
+					_Utils_Tuple2(
+					'date',
+					$elm$json$Json$Encode$string(content.date)),
+					_Utils_Tuple2(
+					'id',
+					$elm$json$Json$Encode$int(content.id)),
+					_Utils_Tuple2(
+					'references',
+					A2($elm$json$Json$Encode$list, $elm$json$Json$Encode$string, content.references)),
+					_Utils_Tuple2(
+					'images',
+					A2($elm$json$Json$Encode$list, $author$project$Main$encodeMaybeString, content.images))
+				]));
+	} else {
+		return $elm$json$Json$Encode$object(_List_Nil);
+	}
+};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
-var $elm$core$Debug$log = _Debug_log;
 var $elm$url$Url$Builder$toQueryPair = function (_v0) {
 	var key = _v0.a;
 	var value = _v0.b;
@@ -6686,8 +6779,7 @@ var $author$project$Main$postUrlWithId = function (postId) {
 		$author$project$Main$absoluteUrl(postId));
 };
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
+var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$core$Basics$identity);
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6758,10 +6850,6 @@ var $author$project$Page$Home$update = F2(
 		}
 	});
 var $author$project$Page$Posts$Failure = {$: 'Failure'};
-var $author$project$Page$Posts$ShareButtonPressed = F2(
-	function (a, b) {
-		return {$: 'ShareButtonPressed', a: a, b: b};
-	});
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
@@ -6795,8 +6883,7 @@ var $elm$core$Maybe$withDefault = F2(
 	});
 var $author$project$Main$x = function (_v0) {
 	var a = _v0.a;
-	var b = _v0.b;
-	return 'Current link copied to clipboard!';
+	return a;
 };
 var $author$project$Main$y = function (p) {
 	if (p.$ === 'Success') {
@@ -6883,23 +6970,34 @@ var $author$project$Main$update = F2(
 							model,
 							A2($author$project$Page$Posts$update, msg, post));
 					} else {
-						var fafa = $author$project$Main$sendMessage('Current link copied to clipboard');
 						return _Utils_Tuple2(
 							model,
 							$author$project$Main$sendMessage(
-								$author$project$Main$x(
-									A2(
-										$author$project$Page$Posts$update,
-										msg,
-										$author$project$Main$y(post)))));
+								$author$project$Main$encodePost(
+									$author$project$Main$x(
+										A2(
+											$author$project$Page$Posts$update,
+											msg,
+											$author$project$Main$y(post))))));
 					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
 			default:
 				var s = message.a;
-				var d = A2($elm$core$Debug$log, 'Rev up the bugati ay', s);
-				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				var post = A2($elm$json$Json$Decode$decodeValue, $author$project$Main$decodeArticle, s);
+				if (post.$ === 'Ok') {
+					var decodedPost = post.a;
+					return A2(
+						$author$project$Main$stepPost,
+						model,
+						A2(
+							$author$project$Page$Posts$update,
+							$author$project$Page$Posts$OnShareButtonPressed(decodedPost),
+							A2($author$project$Page$Posts$ShareButtonPressed, decodedPost, '')));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $elm$browser$Browser$Document = F2(
@@ -7292,9 +7390,6 @@ var $author$project$Page$Home$view = function (model) {
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
 		$author$project$Page$Home$viewLatestsPosts(model));
-};
-var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
-	return {$: 'OnShareButtonPressed', a: a};
 };
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$i = _VirtualDom_node('i');

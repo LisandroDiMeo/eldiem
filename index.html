@@ -16,7 +16,7 @@
           console.log(message);
           const url = window.location.href;
           navigator.clipboard.writeText(url);
-          app.ports.messageReceiver.send("CopySuccess");
+          app.ports.messageReceiver.send(message);
         });
 </script>
 </body>

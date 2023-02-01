@@ -2,6 +2,8 @@ port module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (string)
 import Url
 import Url.Builder
 import Url.Parser exposing (Parser, (</>), int, oneOf, s, parse)
@@ -39,8 +41,8 @@ type Page
     | Posts Posts.Model
     -- | Other
 
-port sendMessage : String -> Cmd msg
-port messageReceiver : (String -> msg) -> Sub msg
+port sendMessage : (Encode.Value) -> Cmd msg
+port messageReceiver : (Encode.Value -> msg) -> Sub msg
 
 -- SUBSCRIPTIONS
 
@@ -113,7 +115,7 @@ type Msg
     | HomeMsg Home.Msg
     | AboutMsg About.Msg
     | PostsMsg Posts.Msg
-    | LinkCopied String
+    | LinkCopied Encode.Value
 
 postUrlWithId : String -> Maybe Url.Url
 postUrlWithId postId = Url.fromString <| absoluteUrl postId
@@ -157,15 +159,16 @@ update message model =
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
                         OnShareButtonPressed _ ->
-                            let fafa = sendMessage "Current link copied to clipboard"
-                            in
                             -- stepPost model (Posts.update msg <| y post fafa)
-                            (model, sendMessage <| x (Posts.update msg (y post)))
+                            (model, sendMessage <| encodePost <| x (Posts.update msg (y post)))
                 _ -> (model, Cmd.none)
         LinkCopied s ->
-            let d = Debug.log "Rev up the bugati ay" s
+            let post = Decode.decodeValue decodeArticle s
             in
-            (model, Cmd.none)
+            case post of
+                Ok decodedPost -> stepPost model (Posts.update (OnShareButtonPressed decodedPost) <| ShareButtonPressed decodedPost "")
+                Err _ -> (model, Cmd.none)
+
 
 stepHome : Model -> ( Home.Model, Cmd Home.Msg ) -> (Model, Cmd Msg)
 stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map HomeMsg cmds )
@@ -176,14 +179,52 @@ stepAbout model (about, cmds) = ( { model | page = About about }, Cmd.map AboutM
 stepPost : Model -> ( Posts.Model, Cmd Posts.Msg ) -> (Model, Cmd Msg)
 stepPost model (post, cmds) = ( { model | page = Posts post }, Cmd.map PostsMsg cmds )
 
-x : (Posts.Model, Cmd msg) -> String
-x (a,b) = "Current link copied to clipboard!"
+x : (Posts.Model, Cmd msg) -> Posts.Model
+x (a,_) = a
 
 y : Posts.Model -> Posts.Model
 y p =
     case p of
         Success post -> ShareButtonPressed post ""
         _ -> p
+
+encodePost : Posts.Model -> Encode.Value
+encodePost post =
+    case post of
+        ShareButtonPressed content _ ->
+            Encode.object
+                    [ ( "title", string content.title )
+                    , ( "summary", string content.summary )
+                    , ( "content", Encode.list string content.content )
+                    , ( "date", string content.date )
+                    , ( "id", Encode.int content.id )
+                    , ( "references", Encode.list string content.references )
+                    , ( "images", Encode.list encodeMaybeString content.images)
+                    ]
+        _ -> Encode.object []
+
+encodeMaybeString : Maybe String -> Encode.Value
+encodeMaybeString maybeString =
+    case maybeString of
+        Nothing ->
+            Encode.null
+
+        Just string ->
+            Encode.string string
+
+decodeArticle : Decode.Decoder Posts.Post
+decodeArticle =
+    Decode.map7 Posts.Post
+        (Decode.field "title" Decode.string)
+        (Decode.field "summary" Decode.string)
+        (Decode.field "content" (Decode.list Decode.string))
+        (Decode.field "date" Decode.string)
+        (Decode.field "id" Decode.int)
+        (Decode.field "references" (Decode.list Decode.string))
+        (Decode.field "images" (Decode.list (Decode.maybe Decode.string)))
+
+
+
 
 -- ROUTER 
 
