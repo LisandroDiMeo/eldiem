@@ -142,7 +142,7 @@ update message model =
             case model.page of
                 Home home ->
                     case msg of
-                        GotLatestsPosts _ -> stepHome model (Home.update msg home)
+                        GotLatestPosts _ -> stepHome model (Home.update msg home)
                         OnLatestPostPressed postId -> case postUrlWithId <| postId of
                                                             Just postUrl -> stepPost model (Posts.init <| Maybe.withDefault 0 <| String.toInt postId) -- update (LinkClicked (Browser.Internal postUrl)) model
                                                             Nothing -> (model, Cmd.none)
