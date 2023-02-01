@@ -10,7 +10,7 @@ import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
 import Page.Home as Home exposing (Msg(..))
 import Page.About as About
-import Page.Posts as Posts exposing (Msg(..))
+import Page.Posts as Posts exposing (Model(..), Msg(..))
 
 -- MAIN
 
@@ -40,12 +40,12 @@ type Page
     -- | Other
 
 port sendMessage : String -> Cmd msg
+port messageReceiver : (String -> msg) -> Sub msg
 
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
+subscriptions _ = messageReceiver LinkCopied
 
 -- VIEW
 
@@ -65,7 +65,8 @@ header = navbar navBarTabs
 
 wrapperFor : Page -> Browser.Document Msg
 wrapperFor page 
-    = case page of
+    =
+    case page of
         Home home -> Browser.Document "Home" ([header, Home.view home |> Html.map HomeMsg, footer])
         NotFound -> Browser.Document "NotFound" ([header, footer])
         About about -> Browser.Document "About" ([header, About.view about, footer])
@@ -94,8 +95,8 @@ stepUrl url model =
                         Just s -> s
                         Nothing -> ""
                 }
-    in 
-    case parse parser fakeUrl of 
+    in
+    case parse parser fakeUrl of
         Just answer -> answer
         Nothing -> ( { model | page = NotFound }, Cmd.none )
 
@@ -112,6 +113,7 @@ type Msg
     | HomeMsg Home.Msg
     | AboutMsg About.Msg
     | PostsMsg Posts.Msg
+    | LinkCopied String
 
 postUrlWithId : String -> Maybe Url.Url
 postUrlWithId postId = Url.fromString <| absoluteUrl postId
@@ -149,13 +151,21 @@ update message model =
                 About about -> stepAbout model (About.update msg about)
                 _ -> (model, Cmd.none)
 
-        PostsMsg msg -> 
+        PostsMsg msg ->
             case model.page of
                 Posts post ->
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
-                        OnShareButtonPressed _ -> (model, sendMessage "Current link copied to clipboard!") -- No estoy haciendo update!
+                        OnShareButtonPressed _ ->
+                            let fafa = sendMessage "Current link copied to clipboard"
+                            in
+                            -- stepPost model (Posts.update msg <| y post fafa)
+                            (model, sendMessage <| x (Posts.update msg (y post)))
                 _ -> (model, Cmd.none)
+        LinkCopied s ->
+            let d = Debug.log "Rev up the bugati ay" s
+            in
+            (model, Cmd.none)
 
 stepHome : Model -> ( Home.Model, Cmd Home.Msg ) -> (Model, Cmd Msg)
 stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map HomeMsg cmds )
@@ -165,6 +175,15 @@ stepAbout model (about, cmds) = ( { model | page = About about }, Cmd.map AboutM
 
 stepPost : Model -> ( Posts.Model, Cmd Posts.Msg ) -> (Model, Cmd Msg)
 stepPost model (post, cmds) = ( { model | page = Posts post }, Cmd.map PostsMsg cmds )
+
+x : (Posts.Model, Cmd msg) -> String
+x (a,b) = "Current link copied to clipboard!"
+
+y : Posts.Model -> Posts.Model
+y p =
+    case p of
+        Success post -> ShareButtonPressed post ""
+        _ -> p
 
 -- ROUTER 
 

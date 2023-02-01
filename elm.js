@@ -6646,12 +6646,15 @@ var $author$project$Main$init = F3(
 				page: $author$project$Main$Home($author$project$Page$Home$Loading)
 			});
 	});
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Main$subscriptions = function (model) {
-	return $elm$core$Platform$Sub$none;
+var $author$project$Main$LinkCopied = function (a) {
+	return {$: 'LinkCopied', a: a};
+};
+var $author$project$Main$messageReceiver = _Platform_incomingPort('messageReceiver', $elm$json$Json$Decode$string);
+var $author$project$Main$subscriptions = function (_v0) {
+	return $author$project$Main$messageReceiver($author$project$Main$LinkCopied);
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $elm$core$Debug$log = _Debug_log;
 var $elm$url$Url$Builder$toQueryPair = function (_v0) {
 	var key = _v0.a;
 	var value = _v0.b;
@@ -6762,10 +6765,8 @@ var $author$project$Page$Posts$ShareButtonPressed = F2(
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Page$Posts$update = F2(
 	function (msg, model) {
-		var logi = A2($elm$core$Debug$log, 'Log Update', msg);
 		if (msg.$ === 'OnShareButtonPressed') {
 			var post = msg.a;
 			return _Utils_Tuple2(
@@ -6792,6 +6793,19 @@ var $elm$core$Maybe$withDefault = F2(
 			return _default;
 		}
 	});
+var $author$project$Main$x = function (_v0) {
+	var a = _v0.a;
+	var b = _v0.b;
+	return 'Current link copied to clipboard!';
+};
+var $author$project$Main$y = function (p) {
+	if (p.$ === 'Success') {
+		var post = p.a;
+		return A2($author$project$Page$Posts$ShareButtonPressed, post, '');
+	} else {
+		return p;
+	}
+};
 var $author$project$Main$update = F2(
 	function (message, model) {
 		switch (message.$) {
@@ -6858,7 +6872,7 @@ var $author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'PostsMsg':
 				var msg = message.a;
 				var _v6 = model.page;
 				if (_v6.$ === 'Posts') {
@@ -6869,13 +6883,23 @@ var $author$project$Main$update = F2(
 							model,
 							A2($author$project$Page$Posts$update, msg, post));
 					} else {
+						var fafa = $author$project$Main$sendMessage('Current link copied to clipboard');
 						return _Utils_Tuple2(
 							model,
-							$author$project$Main$sendMessage('Current link copied to clipboard!'));
+							$author$project$Main$sendMessage(
+								$author$project$Main$x(
+									A2(
+										$author$project$Page$Posts$update,
+										msg,
+										$author$project$Main$y(post)))));
 					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
+			default:
+				var s = message.a;
+				var d = A2($elm$core$Debug$log, 'Rev up the bugati ay', s);
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
 var $elm$browser$Browser$Document = F2(
@@ -7384,7 +7408,6 @@ var $author$project$Page$Posts$viewPost = function (model) {
 						]));
 			}
 		});
-	var logi = A2($elm$core$Debug$log, 'Log View', model);
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(

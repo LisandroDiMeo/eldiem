@@ -38,8 +38,7 @@ viewPost model =
     let postBody = List.map (\(content, image) -> 
             case image of
                 Nothing -> p [] [text content]
-                Just s -> div [] [p [] [text content], img [src s, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []]) 
-        logi = Debug.log "Log View" model
+                Just s -> div [] [p [] [text content], img [src s, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []])
     in
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
@@ -84,8 +83,6 @@ type Msg = OnShareButtonPressed Post | GotPostWithId (Result Http.Error Post)
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
-    let logi = Debug.log "Log Update" msg
-    in
     case msg of 
         OnShareButtonPressed post ->
             (ShareButtonPressed post "", Cmd.none)
