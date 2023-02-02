@@ -1,5 +1,6 @@
 module Page.Posts exposing (..)
 
+import Commons.ContentParser exposing (contentParser)
 import Commons.EncodeMaybeString exposing (encodeMaybeString)
 import Html exposing (..)
 import Commons.Zip exposing (zip)
@@ -37,10 +38,7 @@ view model =
 
 viewPost : Model -> List (Html Msg)
 viewPost model =
-    let postBody = List.map (\(content, image) -> 
-            case image of
-                Nothing -> p [] [text content]
-                Just imgSrc -> div [] [p [] [text content], img [src imgSrc, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []])
+    let postBody  = (\postContent -> contentParser postContent [] [width 128, height 128, style "display" "block", style "padding" "12px 14px"])
     in
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
@@ -48,10 +46,9 @@ viewPost model =
         Success post -> buildPostBody postBody post False
         ShareButtonPressed post -> buildPostBody postBody post True
 
-buildPostBody : (List (String, Maybe String) -> List (Html Msg)) -> Post -> Bool -> List (Html Msg)
+buildPostBody : ((List String) -> List (Html Msg)) -> Post -> Bool -> List (Html Msg)
 buildPostBody contentAndImagesMapper post linkCopied =
-    let zippedTextWithImages = zip post.content post.images
-        postContentWithImages = contentAndImagesMapper zippedTextWithImages
+    let postContentWithImages = contentAndImagesMapper post.content
         shareButtonText = if linkCopied then "Copied to clipboard!" else "Share it!"
     in
     [

@@ -7432,19 +7432,10 @@ var $author$project$Page$Posts$pagination = function (post) {
 			$author$project$Page$Posts$hasPreviousPosts(post) ? $author$project$Page$Posts$dualPagination(post) : $author$project$Page$Posts$singlePagination(post))
 		]);
 };
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
-	});
-var $author$project$Commons$Zip$zip = F2(
-	function (l1, l2) {
-		return A3($elm$core$List$map2, $elm$core$Tuple$pair, l1, l2);
-	});
 var $author$project$Page$Posts$buildPostBody = F3(
 	function (contentAndImagesMapper, post, linkCopied) {
-		var zippedTextWithImages = A2($author$project$Commons$Zip$zip, post.content, post.images);
 		var shareButtonText = linkCopied ? 'Copied to clipboard!' : 'Share it!';
-		var postContentWithImages = contentAndImagesMapper(zippedTextWithImages);
+		var postContentWithImages = contentAndImagesMapper(post.content);
 		return _Utils_ap(
 			_List_fromArray(
 				[
@@ -7503,47 +7494,75 @@ var $author$project$Page$Posts$buildPostBody = F3(
 						]),
 					$author$project$Page$Posts$pagination(post))));
 	});
+var $elm$core$String$dropRight = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3($elm$core$String$slice, 0, -n, string);
+	});
+var $author$project$Commons$ContentParser$toImageTag = F2(
+	function (line, attributes) {
+		var imgSrc = A2(
+			$elm$core$String$dropRight,
+			1,
+			A2($elm$core$String$dropLeft, 2, line));
+		return A2(
+			$elm$html$Html$img,
+			A2(
+				$elm$core$List$cons,
+				$elm$html$Html$Attributes$src(imgSrc),
+				attributes),
+			_List_Nil);
+	});
+var $author$project$Commons$ContentParser$toParagraphTag = F2(
+	function (line, attributes) {
+		return A2(
+			$elm$html$Html$p,
+			attributes,
+			_List_fromArray(
+				[
+					$elm$html$Html$text(line)
+				]));
+	});
+var $author$project$Commons$ContentParser$Image = function (a) {
+	return {$: 'Image', a: a};
+};
+var $author$project$Commons$ContentParser$Paragraph = function (a) {
+	return {$: 'Paragraph', a: a};
+};
+var $author$project$Commons$ContentParser$toTag = function (line) {
+	return A2($elm$core$String$contains, '$', line) ? $author$project$Commons$ContentParser$Image(line) : $author$project$Commons$ContentParser$Paragraph(line);
+};
+var $author$project$Commons$ContentParser$contentParser = F3(
+	function (content, paragraphAttributes, imageAttributes) {
+		var tagList = A2($elm$core$List$map, $author$project$Commons$ContentParser$toTag, content);
+		var deb0 = A2($elm$core$Debug$log, 'PreParse', content);
+		return A2(
+			$elm$core$List$map,
+			function (tag) {
+				var deb = A2($elm$core$Debug$log, 'Parser', tag);
+				if (tag.$ === 'Paragraph') {
+					var line = tag.a;
+					return A2($author$project$Commons$ContentParser$toParagraphTag, line, paragraphAttributes);
+				} else {
+					var src = tag.a;
+					return A2($author$project$Commons$ContentParser$toImageTag, src, imageAttributes);
+				}
+			},
+			tagList);
+	});
 var $author$project$Page$Posts$viewPost = function (model) {
-	var postBody = $elm$core$List$map(
-		function (_v1) {
-			var content = _v1.a;
-			var image = _v1.b;
-			if (image.$ === 'Nothing') {
-				return A2(
-					$elm$html$Html$p,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(content)
-						]));
-			} else {
-				var imgSrc = image.a;
-				return A2(
-					$elm$html$Html$div,
-					_List_Nil,
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(content)
-								])),
-							A2(
-							$elm$html$Html$img,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$src(imgSrc),
-									$elm$html$Html$Attributes$width(128),
-									$elm$html$Html$Attributes$height(128),
-									A2($elm$html$Html$Attributes$style, 'display', 'block'),
-									A2($elm$html$Html$Attributes$style, 'padding', '12px 14px')
-								]),
-							_List_Nil)
-						]));
-			}
-		});
+	var postBody = function (postContent) {
+		return A3(
+			$author$project$Commons$ContentParser$contentParser,
+			postContent,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$width(128),
+					$elm$html$Html$Attributes$height(128),
+					A2($elm$html$Html$Attributes$style, 'display', 'block'),
+					A2($elm$html$Html$Attributes$style, 'padding', '12px 14px')
+				]));
+	};
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
