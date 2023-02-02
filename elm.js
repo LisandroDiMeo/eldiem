@@ -6193,22 +6193,13 @@ var $author$project$Page$Posts$Loading = {$: 'Loading'};
 var $author$project$Page$Posts$GotPostWithId = function (a) {
 	return {$: 'GotPostWithId', a: a};
 };
-var $author$project$Page$Posts$Post = F7(
-	function (title, summary, content, date, id, references, images) {
-		return {content: content, date: date, id: id, images: images, references: references, summary: summary, title: title};
+var $author$project$Page$Posts$Post = F6(
+	function (title, summary, content, date, id, references) {
+		return {content: content, date: date, id: id, references: references, summary: summary, title: title};
 	});
-var $elm$json$Json$Decode$map7 = _Json_map7;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$maybe = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
-				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
-			]));
-};
-var $author$project$Page$Posts$postDecoder = A8(
-	$elm$json$Json$Decode$map7,
+var $elm$json$Json$Decode$map6 = _Json_map6;
+var $author$project$Page$Posts$postDecoder = A7(
+	$elm$json$Json$Decode$map6,
 	$author$project$Page$Posts$Post,
 	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'summary', $elm$json$Json$Decode$string),
@@ -6221,12 +6212,7 @@ var $author$project$Page$Posts$postDecoder = A8(
 	A2(
 		$elm$json$Json$Decode$field,
 		'references',
-		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'images',
-		$elm$json$Json$Decode$list(
-			$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string))));
+		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)));
 var $author$project$Page$Posts$postIdToRealId = function (id) {
 	return function (rid) {
 		return ($elm$core$String$length(rid) < 3) ? _Utils_ap(
@@ -6664,16 +6650,6 @@ var $author$project$Page$Posts$ShareButtonPressed = function (a) {
 	return {$: 'ShareButtonPressed', a: a};
 };
 var $elm$json$Json$Decode$decodeValue = _Json_run;
-var $elm$json$Json$Encode$null = _Json_encodeNull;
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Commons$EncodeMaybeString$encodeMaybeString = function (maybeString) {
-	if (maybeString.$ === 'Nothing') {
-		return $elm$json$Json$Encode$null;
-	} else {
-		var string = maybeString.a;
-		return $elm$json$Json$Encode$string(string);
-	}
-};
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$json$Json$Encode$list = F2(
 	function (func, entries) {
@@ -6697,6 +6673,7 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Page$Posts$encodePost = function (post) {
 	if (post.$ === 'ShareButtonPressed') {
 		var content = post.a;
@@ -6720,10 +6697,7 @@ var $author$project$Page$Posts$encodePost = function (post) {
 					$elm$json$Json$Encode$int(content.id)),
 					_Utils_Tuple2(
 					'references',
-					A2($elm$json$Json$Encode$list, $elm$json$Json$Encode$string, content.references)),
-					_Utils_Tuple2(
-					'images',
-					A2($elm$json$Json$Encode$list, $author$project$Commons$EncodeMaybeString$encodeMaybeString, content.images))
+					A2($elm$json$Json$Encode$list, $elm$json$Json$Encode$string, content.references))
 				]));
 	} else {
 		return $elm$json$Json$Encode$object(_List_Nil);

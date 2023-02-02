@@ -24,8 +24,7 @@ type alias Post =
         content: List String, 
         date: String,
         id: Int,
-        references: List String,
-        images: List (Maybe String)
+        references: List String
     }
 
 type Model = Failure | Loading | Success Post | ShareButtonPressed Post
@@ -121,14 +120,13 @@ onShareButtonPressed postToShareModel =
 
 postDecoder : Decoder Post
 postDecoder = 
-    map7 Post
+    map6 Post
         (field "title" string)
         (field "summary" string)
         (field "content" (Json.Decode.list string))
         (field "date" string)
         (field "id" int)
         (field "references" (Json.Decode.list string))
-        (field "images" (Json.Decode.list (maybe string)))
 
 encodePost : Model -> Encode.Value
 encodePost post =
@@ -141,6 +139,5 @@ encodePost post =
                     , ( "date", Encode.string content.date )
                     , ( "id", Encode.int content.id )
                     , ( "references", Encode.list Encode.string content.references )
-                    , ( "images", Encode.list encodeMaybeString content.images)
                     ]
         _ -> Encode.object []
