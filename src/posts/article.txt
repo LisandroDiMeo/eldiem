@@ -1,0 +1,17 @@
+# Dispatch Your Conditionals
+
+Created: February 3, 2023 5:43 PM
+
+As software developers, it's all too common to come across complex modeling challenges, especially when working with Object Oriented Programming. But did you know that there's a technique that can help you handle situations involving multiple types with ease? Enter Double Dispatch, a solution that enables multiple polymorphism, meaning the ability to perform polymorphic operations on multiple objects. In this article, we'll dive into what Double Dispatch is, how it differs from simple polymorphism, and how it can be applied to other patterns.
+
+Imagine that you are building a shopping app that includes a personalized feed with offers that may change it’s design very often. That feed also depends on the different tiers a user can be (free, paid, premium, whatever). 
+
+```jsx
+switch (anOffer):
+	instanceof BlackFriday: // Code that displays the UI for a black friday offer
+	instanceof SummerSale: // Code that displays a summer sale offer
+	instanceof ArgentinaWorldCupWinners: // ⭐ ⭐ ⭐
+	instaceof ...
+```
+
+Keep in mind that inside every switch-case, we will end up checking for the user type… very clever right?
