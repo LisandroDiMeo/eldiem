@@ -24,7 +24,156 @@ Well, first of all, “it’s working” it's just the bare minimum when we are 
 - Poor representation of our domain (with this representation, we are saying, implicitly, that an error its just a type, and not something that may implies a UI change).
 - Modularity problems. Adding a new error, or modifying existing ones implies touching this code, which usually creates conflicts. Using this philosophy will eventually lead to unmaintainable and odd code.
 
-Luckily, people back then (in the 80s!) already thought a solution for this, which involves giving ****life**** to our objects, and making them to collaborate.
+Luckily, people back then (in the 80s!) already thought a solution for this, which involves giving ***life*** to our objects, and making them to collaborate.
 
+### Double Dispatch (and more)
 
+In order to introduce double dispatch, we should know about simple (or single) polymorphism.
+Simple polymorphism refers to the ability of an object to take on many forms. In the context of object-oriented programming, it refers to a feature where a single method can perform different operations depending on the type of the object being passed to it. For example, a method that takes an object of the base class **`Shape`** and calculates its area, can be overridden by subclasses such as **`Circle`** and **`Rectangle`** to provide their specific implementations of the method. This is very intuitive, and most of us when we were introduced to Object Oriented programming understood this very easily (if its a shape, it should behave as a shape!).
+
+Double dispatch, on the other hand, refers to a technique where the method to be executed is determined by the type of two objects, rather than just one. In other words, it involves dispatching a method call to the right implementation based on the runtime types of multiple objects involved. This can be used to handle more complex scenarios when the collaboration of objects it’s not straightforward, such as determining the outcome of a collision between two objects in a game, where the behavior depends on both the attacker and the target. In such scenarios, simple polymorphism alone is not enough and double dispatch can provide a more flexible solution. In our example, it will help us to ***dispatch*** the proper method making a collaboration between the feeds offers and the user.
+
+Returning to our example, let’s see how it would be applied :
+
+```kotlin
+interface FeedOffers {
+    fun displayForNormalUser(view: View, user: NormalUser)
+    fun displayForPremiumUser(view: View, user: PremiumPaidTierUser)
+    fun displayForNormalPaidUser(view: View, user: NormalPaidTierUser)
+}
+
+class SummerSaleOffers : FeedOffers {
+    override fun displayForNormalUser(view: View, user: NormalUser) {
+        // code to show offers with summer sale theme for a normal user
+    }
+
+    override fun displayForPremiumUser(view: View, user: PremiumPaidTierUser) {
+        // code to show offers with summer sale theme for a premium user
+    }
+
+    override fun displayForNormalPaidUser(view: View, user: NormalPaidTierUser) {
+        // code to show offers with summer sale theme for a normal paid user
+    }
+}
+
+class BlackFridayOffers : FeedOffers {
+    override fun displayForNormalUser(view: View, user: NormalUser) {
+        // code to show offers with black friday theme for a normal user
+    }
+
+    override fun displayForPremiumUser(view: View, user: PremiumPaidTierUser) {
+        // code to show offers with black friday theme for a premium user
+    }
+
+    override fun displayForNormalPaidUser(view: View, user: NormalPaidTierUser) {
+        // code to show offers with black friday theme for a normal paid user
+    }
+}
+
+class ArgentinaWorldCupWinnerOffers : FeedOffers {
+    override fun displayForNormalUser(view: View, user: NormalUser) {
+        // code to show offers with the theme of Argentina World Cup for a normal user
+    }
+
+    override fun displayForPremiumUser(view: View, user: PremiumPaidTierUser) {
+        // code to show offers with the theme of Argentina World Cup for a premium user
+    }
+
+    override fun displayForNormalPaidUser(view: View, user: NormalPaidTierUser) {
+        // code to show offers with the theme of Argentina World Cup for a normal paid user
+    }
+}
+
+interface User {
+    fun displayFor(feedOffers: FeedOffers, view: View)
+}
+
+class NormalPaidTierUser : User {
+    override fun displayFor(feedOffers: FeedOffers, view: View) {
+        feedOffers.displayForNormalPaidUser(this, view)
+    }
+}
+
+class PremiumPaidTierUser : User {
+    override fun displayFor(feedOffers: FeedOffers, view: View) {
+        feedOffers.displayForPremiumUser(this, view)
+    }
+}
+
+class NormalUser : Error {
+    override fun displayFor(feedOffers: FeedOffers, view: View) {
+        feedOffers.displayForNormalPaidUser(this, view)
+    }
+}
+
+class View {
+
+	fun showUi(user: User)  {
+		val uiContent = /* retrieve ui */
+		if ( uiContent.hasFeedOffers() ) {
+            user.displayFor(uiContent.feedOffers, this)
+		}
+	}
+
+}
+```
+
+As you now see, the switch case was removed, and a more semantic and self-explanatory code it’s the product of applying this technique.
+
+A good practice to see if our efforts were not in vain, it’s to think how this code would be affected in case of new requirements. For example, a new theme offer, such as Back to School offer feed. We should only implement a new class. On the other hand, what if a new user tier is introduced? Easy, implement a new class (now from User), and add a new method to FeedOffers (see that our old code remains with almost no change!).
+
+It’s clear to see that this implementation it’s more flexible, and less prone to be weak facing new requirements. However some people may think this is an overkill (or over engineering), but it's important to weigh the benefits of writing a more structured and scalable code against the potential trade-offs. Ultimately, it depends on the requirements and goals of the project, and whether the extra effort is worth it for your particular use case.
+
+### Pretty Visitors
+
+Since we were talking about object oriented design, patterns are always a topic of discussion. Nevertheless, I’ve read a lot of articles where there is no clear motivation nor intent of the existence and implications of the pattern. Furthermore, there is a tendency to present a *cookbook* of patterns (often filled with odd things, such as relying in language specific features, or just poor understanding of design heuristics).
+
+Having saying that, double dispatch it’s not a pattern itself, but a technique that can be used in other patters, like the Visitor Pattern (this isn’t the important part, since for other authors Double dispatch is often considered as a generalization of the Visitor pattern).
+
+Visitor pattern aims to solve the situation where an object can behave differently.
+
+Using the previous example, imagine the case where we don’t have users. We only have FeedOffers, and we want to show the proper banner without using conditionals.  Also, imagine that we don’t know the existence of Visitor Pattern (maybe if you read until here, you don’t know it!). A good heuristic, is to think about collaborations. We cannot expect that a single object solve all of our problems, so maybe a new player could be introduced. This one, will help the FeedOffers to show the proper Feed. Wait, we can tweak a little Double Dispatch and help FeedOffer’s to show what we want!
+
+```kotlin
+class ___(view: View) {
+    fun doForBlackFridayOffer(blackFridayOffer: BlackFridayOffers) {
+        // Code to show a black friday offer at view
+    }
+
+    fun doForSummerSaleOffer(summerSaleOffer: SummerSaleOffers) {
+        // Code to show a summer sale offer at view
+    }
+
+    // ...
+}
+
+class SummerSaleOffer : FeedOffer {
+		override fun xxx(aThing: ___) {
+			aThing.doForSummerSaleOffer(this)
+		}
+}
+```
+
+And that’s it! Our new player will implement each algorithm for each instance of our feed offers, and each offer will call (single polymorphism) the ***now-called “***xxx*”* method.
+
+It’s very interesting what we have done. We avoided the temptation to rely on our view to check each offer type (or to do something like that) and we introduced a collaborator, and modified a technique to solve our problem (we applied an heuristic to design!).
+
+Now the real hard part: naming stuff. And to do so, I’ll give you two options:
+
+- Do yourself some research about visitor pattern, and after that, try to name these.
+- Try to find yourself a proper name for this, and after that do some research. Maybe you end up with a name that fits you better than what the bibliography suggests.
+
+I would go with the second one ;)
+
+### Side Note on the Solution
+
+Of course the reverse solution in which feed offers relayed to user objects would have equally good modularity properties. The choice in this case depends on a design decision as to whether the final methods belong. Sometimes this design decision it's the most difficult task.
+
+Finally, its worth to mention that te resulting code can be tested with more ease ;) (but we will left this for further posts).
+
+### Cites
+
+**A Simple Technique for Handling Multiple Polymorphism, Daniel H. H. Ingalls. OOPSLA ‘86.**
+
+**Design Patterns: Elements of Reusable Object-Oriented Software.**
 

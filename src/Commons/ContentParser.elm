@@ -192,7 +192,7 @@ markdownListToHtml markdownList text =
     listItems =
       String.lines text
         |> List.filter (\line -> String.trim line /= "")
-        |> List.map (\item -> li [] [ Html.text item ])
+        |> List.map (\item -> li [] [ Html.text <| String.dropLeft 2 item ])
   in
     case markdownList of
       Unordered ->
