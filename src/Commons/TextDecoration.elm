@@ -67,10 +67,10 @@ buildRemainderIntervals : List (Int, Int, TextDecorators) -> (Int, Int, TextDeco
 buildRemainderIntervals intervals (_,y,_) isFirst length accLength =
     case intervals of
         [] ->
-            if accLength < length then [(y + 1, length, NoDecorator)] else []
+            if accLength < length then [(y, length, NoDecorator)] else []
         (a,b,c)::xs ->
-            if isFirst && a > 0 then (0, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False length (accLength + b - a)
-            else (y + 1, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False length (accLength + b - a)
+            if isFirst && a > 0 then (0, a, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False length (accLength + b - a)
+            else (y, a, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False length (accLength + b - a)
 
 sortIntervals : List (Int, Int, TextDecorators) -> List (Int, Int, TextDecorators)
 sortIntervals intervals = List.sortBy (\(x,_,_) -> x) intervals
@@ -84,11 +84,8 @@ intervalsToHtml intervals content =
                 d0 = Debug.log "Slice res is " sliced
             in
             case decorator of
-                NoDecorator -> text <| (slicer content) ++ " "
-                Italic -> Html.i [] [text <| addWhiteSpace <| String.dropLeft 1 <| String.dropRight 1 <| slicer content]
-                Bold -> Html.b [] [text <| addWhiteSpace <| String.dropLeft 2 <| String.dropRight 2 <| slicer content]
-                BoldItalic -> Html.em [] [ Html.b [] [text <| (addWhiteSpace) <| String.dropLeft 3 <| String.dropRight 3 <| slicer content]]
+                NoDecorator -> text <| (slicer content)
+                Italic -> Html.i [] [text <| String.dropLeft 1 <| String.dropRight 1 <| slicer content]
+                Bold -> Html.b [] [text <| String.dropLeft 2 <| String.dropRight 2 <| slicer content]
+                BoldItalic -> Html.em [] [ Html.b [] [text <| String.dropLeft 3 <| String.dropRight 3 <| slicer content]]
     ) intervals
-
-addWhiteSpace : String -> String
-addWhiteSpace s = s ++ " "
