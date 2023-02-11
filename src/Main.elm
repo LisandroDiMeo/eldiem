@@ -2,8 +2,6 @@ port module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
-import Commons.EncodeMaybeString exposing (encodeMaybeString)
-import Json.Decode as Decode
 import Json.Encode as Encode exposing (string)
 import Url
 import Url.Builder
@@ -13,7 +11,7 @@ import Components.Navbar exposing (navbar, NavbarTab)
 import Components.Footer exposing (footer)
 import Page.LatestPosts as LatestPosts exposing (Msg(..))
 import Page.About as About exposing (staticAbout)
-import Page.Posts as Posts exposing (Model(..), Msg(..), encodePost, onShareButtonPressed, postDecoder)
+import Page.Posts as Posts exposing (Model(..), Msg(..), onShareButtonPressed)
 
 -- MAIN
 
@@ -159,16 +157,11 @@ update message model =
                     in
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
-                        OnShareButtonPressed _ ->
-                            (model, sendMessage <| encodePost <| Tuple.first <| (Posts.update msg (onShareButtonPressed post)))
+                        OnShareButtonPressed _ -> stepPost model (Posts.update msg post)
+                            -- (model, sendMessage <| encodePost <| Tuple.first <| (Posts.update msg (onShareButtonPressed post)))
                 _ -> (model, Cmd.none)
 
-        LinkCopied json ->
-            let post = Decode.decodeValue postDecoder json
-            in
-            case post of
-                Ok decodedPost -> stepPost model (Posts.update (OnShareButtonPressed decodedPost) <| ShareButtonPressed decodedPost)
-                Err _ -> (model, Cmd.none)
+        LinkCopied json -> (model, Cmd.none)
 
 
 stepHome : Model -> ( About.Model, Cmd About.Msg ) -> (Model, Cmd Msg)

@@ -1,6 +1,7 @@
 module Commons.ContentParser exposing (..)
 
 import Browser
+import Commons.TextDecoration exposing (buildHtmlText)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
@@ -26,7 +27,7 @@ init : () -> (Model, Cmd Msg)
 init _ =
   ( Loading
   , Http.get
-      { url = "http://localhost:8000/src/posts/article.txt"
+      { url = "http://localhost:8000/src/posts/post002.txt"
       , expect = Http.expectString GotText
       }
   )
@@ -217,7 +218,7 @@ parseMd lines styles =
                         listString = String.join "\n" listItems
                     in
                     markdownListToHtml Unordered listString :: parseMd nextItems styles
-                P -> p styles.p [text line] :: parseMd nextLines styles
+                P -> p styles.p (buildHtmlText <| line) :: parseMd nextLines styles
                 _ -> []
 
 firstOf : List (String -> Maybe MarkdownTag) -> String -> MarkdownTag

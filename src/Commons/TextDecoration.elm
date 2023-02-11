@@ -12,7 +12,7 @@ init = Model ""
 
 -- UPDATE
 
-type Msg = OnImagePressed
+type Msg = Preview
 
 update : Msg -> Model -> Model
 update _ model = model
@@ -25,11 +25,17 @@ view _ =
         a = toHtml s
         b = buildRemainderIntervals a (0,0,NoDecorator) True (String.length s) 0
         t = sortIntervals <| a ++ b
-        orig = Debug.log "Original string is " s
         content = intervalsToHtml t s
-        d0 = Debug.log "All intervals are" t
     in
     Html.div [] content
+
+buildHtmlText : String -> List (Html msg)
+buildHtmlText content =
+    let a = toHtml content
+        b = buildRemainderIntervals a (0,0,NoDecorator) True (String.length content) 0
+        t = sortIntervals <| a ++ b
+    in
+    intervalsToHtml t content
 
 type TextDecorators = NoDecorator | Italic | Bold | BoldItalic
 
@@ -38,7 +44,7 @@ toHtml input =
   let
     italicRegex = Regex.fromString "\\*(.*?)\\*"
     boldRegex = Regex.fromString "\\*\\*(.*?)\\*\\*"
-    italicBoldRegex = Regex.fromString "\\*\\*\\*(.*?)\\*\\*\\*"
+    italicBoldRegex = Regex.fromString "\\*\\*\\*(.*?)\\*\\*\\*" -- TODO: Fix me
 
     replaceMatch : Maybe Regex -> TextDecorators -> String -> String -> List (Int, Int, TextDecorators)
     replaceMatch regex decorator filter text =
@@ -61,8 +67,6 @@ toHtml input =
   ++ replaceMatch boldRegex Bold "***" input
   ++ replaceMatch italicBoldRegex BoldItalic "****" input
 
--- [(9,18) , (24, 32)] -> (0, 8), (18 + 1, 24 - 1)
-
 buildRemainderIntervals : List (Int, Int, TextDecorators) -> (Int, Int, TextDecorators) -> Bool -> Int -> Int -> List (Int, Int, TextDecorators)
 buildRemainderIntervals intervals (_,y,_) isFirst length accLength =
     case intervals of
@@ -80,8 +84,6 @@ intervalsToHtml intervals content =
     List.map (
         \(from, to, decorator) ->
             let slicer = String.slice from to
-                sliced = slicer content
-                d0 = Debug.log "Slice res is " sliced
             in
             case decorator of
                 NoDecorator -> text <| (slicer content)

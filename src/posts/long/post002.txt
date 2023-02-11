@@ -24,14 +24,14 @@ Well, first of all, “it’s working” it's just the bare minimum when we are 
 - Poor representation of our domain (with this representation, we are saying, implicitly, that an error its just a type, and not something that may implies a UI change).
 - Modularity problems. Adding a new error, or modifying existing ones implies touching this code, which usually creates conflicts. Using this philosophy will eventually lead to unmaintainable and odd code.
 
-Luckily, people back then (in the 80s!) already thought a solution for this, which involves giving ***life*** to our objects, and making them to collaborate.
+Luckily, people back then (in the 80s!) already thought a solution for this, which involves giving **life** to our objects, and making them to collaborate.
 
 ### Double Dispatch (and more)
 
 In order to introduce double dispatch, we should know about simple (or single) polymorphism.
 Simple polymorphism refers to the ability of an object to take on many forms. In the context of object-oriented programming, it refers to a feature where a single method can perform different operations depending on the type of the object being passed to it. For example, a method that takes an object of the base class **`Shape`** and calculates its area, can be overridden by subclasses such as **`Circle`** and **`Rectangle`** to provide their specific implementations of the method. This is very intuitive, and most of us when we were introduced to Object Oriented programming understood this very easily (if its a shape, it should behave as a shape!).
 
-Double dispatch, on the other hand, refers to a technique where the method to be executed is determined by the type of two objects, rather than just one. In other words, it involves dispatching a method call to the right implementation based on the runtime types of multiple objects involved. This can be used to handle more complex scenarios when the collaboration of objects it’s not straightforward, such as determining the outcome of a collision between two objects in a game, where the behavior depends on both the attacker and the target. In such scenarios, simple polymorphism alone is not enough and double dispatch can provide a more flexible solution. In our example, it will help us to ***dispatch*** the proper method making a collaboration between the feeds offers and the user.
+Double dispatch, on the other hand, refers to a technique where the method to be executed is determined by the type of two objects, rather than just one. In other words, it involves dispatching a method call to the right implementation based on the runtime types of multiple objects involved. This can be used to handle more complex scenarios when the collaboration of objects it’s not straightforward, such as determining the outcome of a collision between two objects in a game, where the behavior depends on both the attacker and the target. In such scenarios, simple polymorphism alone is not enough and double dispatch can provide a more flexible solution. In our example, it will help us to **dispatch** the proper method making a collaboration between the feeds offers and the user.
 
 Returning to our example, let’s see how it would be applied :
 
@@ -154,7 +154,7 @@ class SummerSaleOffer : FeedOffer {
 }
 ```
 
-And that’s it! Our new player will implement each algorithm for each instance of our feed offers, and each offer will call (single polymorphism) the ***now-called “***xxx*”* method.
+And that’s it! Our new player will implement each algorithm for each instance of our feed offers, and each offer will call (single polymorphism) the now-called “xxx” method.
 
 It’s very interesting what we have done. We avoided the temptation to rely on our view to check each offer type (or to do something like that) and we introduced a collaborator, and modified a technique to solve our problem (we applied an heuristic to design!).
 

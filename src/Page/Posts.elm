@@ -1,6 +1,6 @@
 module Page.Posts exposing (..)
 
-import Commons.ContentParser exposing (contentParser)
+import Commons.ContentParser exposing (contentParser, customStyles, parseMd)
 import Commons.EncodeMaybeString exposing (encodeMaybeString)
 import Html exposing (..)
 import Commons.Zip exposing (zip)
@@ -27,7 +27,7 @@ type alias Post =
         references: List String
     }
 
-type Model = Failure | Loading | Success Post | ShareButtonPressed Post
+type Model = Failure | Loading | Success String | ShareButtonPressed String
 
 -- VIEW 
 
@@ -42,53 +42,54 @@ viewPost model =
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
-        Success post -> buildPostBody postBody post False
-        ShareButtonPressed post -> buildPostBody postBody post True
+        Success post ->
+            let lines = String.split "\n" post
+            in
+            buildPostBody lines False
+        ShareButtonPressed post ->
+            let lines = String.split "\n" post
+            in
+            buildPostBody lines True
 
-buildPostBody : ((List String) -> List (Html Msg)) -> Post -> Bool -> List (Html Msg)
-buildPostBody contentAndImagesMapper post linkCopied =
-    let postContentWithImages = contentAndImagesMapper post.content
+buildPostBody : List (String) -> Bool -> List (Html Msg)
+buildPostBody post linkCopied =
+    let postContentWithImages = parseMd post customStyles
         shareButtonText = if linkCopied then "Copied to clipboard!" else "Share it!"
     in
-    [
-        h2 [] [text post.title],
-        p [] [i [] [text post.summary]],
-        p [] [text post.date]
-    ]
-    ++ postContentWithImages
+    postContentWithImages
     ++ [ p [] [
                 img [src "src/assets/link.png"
-                , onClick (OnShareButtonPressed post)
+                , onClick (OnShareButtonPressed "")
                 , width 16
                 , height 16
                 , style "padding-right" "8px"
                 ] [], text shareButtonText ] ]
-    ++ pagination post
+    ++ pagination 1
 
 
-pagination : Post -> List (Html msg)
-pagination post = [
-    div [style "display" "inline-flex"] <| if hasPreviousPosts post then dualPagination post else singlePagination post
+pagination : Int -> List (Html msg)
+pagination postId = [
+    div [style "display" "inline-flex"] <| if hasPreviousPosts postId then dualPagination postId else singlePagination postId
     ]
 
-dualPagination : Post -> List (Html msg)
-dualPagination post = [
-    a [href <| "#/Posts/" ++ String.fromInt (post.id - 1), style "text-decoration" "none"] [text "<prev"] ,
-    a [href <| "#/Posts/" ++ String.fromInt (post.id + 1), style "text-decoration" "none"] [text "next>"]
+dualPagination : Int -> List (Html msg)
+dualPagination postId = [
+    a [href <| "#/Posts/" ++ String.fromInt (postId - 1), style "text-decoration" "none"] [text "<prev"] ,
+    a [href <| "#/Posts/" ++ String.fromInt (postId + 1), style "text-decoration" "none"] [text "next>"]
     ]
 
-singlePagination : Post -> List (Html msg)
-singlePagination post = [
-    a [href <| "#/Posts/" ++ String.fromInt (post.id + 1), style "text-decoration" "none"] [text "next>"]
+singlePagination : Int -> List (Html msg)
+singlePagination postId = [
+    a [href <| "#/Posts/" ++ String.fromInt (postId + 1), style "text-decoration" "none"] [text "next>"]
     ]
 
 
-hasPreviousPosts : Post -> Bool
-hasPreviousPosts post = if post.id <= 1 then False else True
+hasPreviousPosts : Int -> Bool
+hasPreviousPosts postId = if postId <= 1 then False else True
 
 -- UPDATE 
 
-type Msg = OnShareButtonPressed Post | GotPostWithId (Result Http.Error Post)
+type Msg = OnShareButtonPressed String | GotPostWithId (Result Http.Error String)
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
@@ -103,8 +104,8 @@ update msg model =
 
 getPostWithId : Int -> Cmd Msg
 getPostWithId id = Http.get
-    { url = "src/posts/long/post"++(postIdToRealId id)++".json"
-    , expect = Http.expectJson GotPostWithId (postDecoder)
+    { url = "src/posts/long/post"++(postIdToRealId id)++".txt"
+    , expect = Http.expectString GotPostWithId
     }
 
 postIdToRealId : Int -> String
@@ -115,29 +116,3 @@ onShareButtonPressed postToShareModel =
     case postToShareModel of
         Success post -> ShareButtonPressed post
         _ -> postToShareModel
-
--- Decoders/Encoders
-
-postDecoder : Decoder Post
-postDecoder = 
-    map6 Post
-        (field "title" string)
-        (field "summary" string)
-        (field "content" (Json.Decode.list string))
-        (field "date" string)
-        (field "id" int)
-        (field "references" (Json.Decode.list string))
-
-encodePost : Model -> Encode.Value
-encodePost post =
-    case post of
-        ShareButtonPressed content ->
-            Encode.object
-                    [ ( "title", Encode.string content.title )
-                    , ( "summary", Encode.string content.summary )
-                    , ( "content", Encode.list Encode.string content.content )
-                    , ( "date", Encode.string content.date )
-                    , ( "id", Encode.int content.id )
-                    , ( "references", Encode.list Encode.string content.references )
-                    ]
-        _ -> Encode.object []
