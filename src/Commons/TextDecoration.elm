@@ -21,9 +21,11 @@ type alias Model = { text : String }
 
 view : Model -> Html msg
 view _ =
-    let a = toHtml "Hello my *beautiful world*, today no *goodbyes* are welcome. Only **Bad feelings** will remain."
-        b = buildRemainderIntervals a (0,0,NoDecorator) True
-        d0 = Debug.log "Remainders are" b
+    let s = "Hello my *beautiful world*, today no *goodbyes* are welcome. Only **Bad feelings** will remain."
+        a = toHtml s
+        b = buildRemainderIntervals a (0,0,NoDecorator) True (String.length s) 0
+        t = sortIntervals <| a ++ b
+        d0 = Debug.log "All intervals are" t
     in
     Html.text "Testing"
 
@@ -59,10 +61,22 @@ toHtml input =
 
 -- [(9,18) , (24, 32)] -> (0, 8), (18 + 1, 24 - 1)
 
-buildRemainderIntervals : List (Int, Int, TextDecorators) -> (Int, Int, TextDecorators) -> Bool -> List (Int, Int, TextDecorators)
-buildRemainderIntervals intervals (_,y,_) isFirst =
+buildRemainderIntervals : List (Int, Int, TextDecorators) -> (Int, Int, TextDecorators) -> Bool -> Int -> Int -> List (Int, Int, TextDecorators)
+buildRemainderIntervals intervals (_,y,_) isFirst length accLength =
     case intervals of
-        [] -> []
+        [] ->
+            if accLength < length then [(y + 1, length, NoDecorator)] else []
         (a,b,c)::xs ->
-            if isFirst && a > 0 then (0, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False
-            else (y + 1, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False
+            if isFirst && a > 0 then (0, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False length (accLength + b - a)
+            else (y + 1, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False length (accLength + b - a)
+
+sortIntervals : List (Int, Int, TextDecorators) -> List (Int, Int, TextDecorators)
+sortIntervals intervals = List.sortBy (\(x,_,_) -> x) intervals
+
+intervalsToHtml : List (Int, Int, TextDecorators) -> List (Html msg)
+intervalsToHtml intervals =
+    List.map (
+        \(from, to, decorator) ->
+            case decorator of
+                NoDecorator -> text ""
+    ) intervals
