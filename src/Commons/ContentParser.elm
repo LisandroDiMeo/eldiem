@@ -71,7 +71,9 @@ view model =
       text "Loading..."
 
     Success fullText ->
-      div [] (parseMd fullText customStyles)
+        let lines = String.split "\n" fullText
+        in
+        div [] (parseMd lines customStyles)
 
 customStyles : Styles msg
 customStyles = {
@@ -152,61 +154,50 @@ type alias Styles msg = {
     quote : List (Attribute msg)
     }
 
---- It assumes that the firsts backticks were removed.
-parseCodeTag : List String -> String
-parseCodeTag lines =
-    let x = List.foldr (\line rec -> if String.startsWith "```" line then rec else line ++ rec) "" lines
-        d0 = Debug.log "AAA" x
-        d1 = Debug.log "BBB" lines
+sublistAfterString : String -> List String -> List String
+sublistAfterString str list =
+  case list of
+      [] -> []
+      x::xs -> if String.contains str x then xs else sublistAfterString str xs
+
+sublistBeforeString : String -> List String -> List String
+sublistBeforeString str list =
+  case list of
+      [] -> []
+      x::xs -> if String.contains str x then [] else x :: sublistBeforeString str xs
+
+parseLists : List String -> List (Html msg)
+parseLists lines =
+    let isList = String.startsWith "-"
+        isNestedList s = String.startsWith "  " s |> and <| String.startsWith "-" <| String.trimLeft s
     in
-    List.foldr (\line rec -> if String.startsWith "```" line then rec else line ++ rec) "" lines
+    case lines of
+        [] -> []
+        x::xs ->
+            if isNestedList x then li [] [ ul [] [] ] :: parseLists xs
+            else
+                if isList x then li [] [text x] :: parseLists xs
+                else []
 
--- TODO: Currently this doesnt work for nested lists
-parseListTag : List String -> List (Html msg)
-parseListTag lines = List.foldr (
-    \line rec -> if not <| String.startsWith "-" line then rec else (li [] [text <| String.left 1 line])::rec
-    ) [] lines
+type MarkdownList =
+  Unordered
+  | Ordered
 
-remainderFoldr : (a -> List a -> b -> b) -> b -> List a -> b
-remainderFoldr f acc list =
-                   case list of
-                       [] -> acc
-                       x::xs -> f x xs (remainderFoldr f acc xs)
 
-remainderFoldr2 : (a -> List a -> b -> b) -> (a -> Bool) -> (List a -> List a) -> b -> List a -> b
-remainderFoldr2 f shouldSkip g acc list =
-                   case list of
-                       [] -> acc
-                       x::xs ->
-                            let ys = if shouldSkip x then xs else g xs
-                            in
-                            f x xs (remainderFoldr2 f shouldSkip g acc ys)
-
-sublistAfterBacktics : List String -> List String
-sublistAfterBacktics list =
-  List.foldr (\str acc -> if String.contains "```" str then [] else str :: acc) [] <| List.reverse list
-
-sublistBeforeBacktics : List String -> List String
-sublistBeforeBacktics list =
-  List.foldr (\str acc -> if String.contains "```" str then [] else str :: acc) [] list
-
-parseMd : String -> Styles msg -> List (Html msg)
-parseMd markdownFile styles =
-    let
-        lines = String.split "\n" markdownFile
-    in
-    remainderFoldr2 (
-        \line nextLines rec ->
+parseMd : List (String) -> Styles msg -> List (Html msg)
+parseMd lines styles =
+    case lines of
+        [] -> []
+        line::nextLines ->
             case firstOf matchers line of
-                H1 -> h1 styles.h1 [text <| String.dropLeft 1 line] :: rec
-                H2 -> h2 styles.h2 [text <| String.dropLeft 2 line] :: rec
-                H3 -> h3 styles.h3 [text <| String.dropLeft 3 line] :: rec
-                H4 -> h4 styles.h4 [text <| String.dropLeft 4 line] :: rec
-                CODE -> pre [] [ code [] [text <| String.join "\n" <| sublistBeforeBacktics <| nextLines] ] :: rec
-                LIST -> ul styles.ul (parseListTag <| (line :: nextLines)) :: rec
-                P -> p styles.p [text line] :: rec
-                _ -> rec
-    ) (\t -> not <| String.contains "```" t) sublistAfterBacktics [] lines
+                H1 -> h1 styles.h1 [text <| String.dropLeft 1 line] :: parseMd nextLines styles
+                H2 -> h2 styles.h2 [text <| String.dropLeft 2 line] :: parseMd nextLines styles
+                H3 -> h3 styles.h3 [text <| String.dropLeft 3 line] :: parseMd nextLines styles
+                H4 -> h4 styles.h4 [text <| String.dropLeft 4 line] :: parseMd nextLines styles
+                CODE -> pre [] [ code [] [text <| String.join "\n" <| sublistBeforeString "```" <| nextLines] ] :: parseMd (sublistAfterString "```" nextLines) styles
+                LIST -> pre [] [ code [] [text <| String.join "\n" <| sublistBeforeString "```" <| nextLines] ] :: parseMd (sublistAfterString "```" nextLines) styles
+                P -> p styles.p [text line] :: parseMd nextLines styles
+                _ -> []
 
 firstOf : List (String -> Maybe MarkdownTag) -> String -> MarkdownTag
 firstOf checkers elem =
