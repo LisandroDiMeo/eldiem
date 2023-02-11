@@ -20,37 +20,49 @@ update _ model = model
 type alias Model = { text : String }
 
 view : Model -> Html msg
-view _ = toHtml "Hello my **good** *lord*"
+view _ =
+    let a = toHtml "Hello my *beautiful world*, today no *goodbyes* are welcome. Only **Bad feelings** will remain."
+        b = buildRemainderIntervals a (0,0,NoDecorator) True
+        d0 = Debug.log "Remainders are" b
+    in
+    Html.text "Testing"
 
-toHtml : String -> Html msg
+type TextDecorators = NoDecorator | Italic | Bold | BoldItalic
+
+toHtml : String -> List (Int, Int, TextDecorators)
 toHtml input =
   let
     italicRegex = Regex.fromString "\\*(.*?)\\*"
     boldRegex = Regex.fromString "\\*\\*(.*?)\\*\\*"
     italicBoldRegex = Regex.fromString "\\*\\*\\*(.*?)\\*\\*\\*"
 
-    replaceMatch : Maybe Regex -> String -> String -> String -> String
-    replaceMatch regex search replace text =
+    replaceMatch : Maybe Regex -> TextDecorators -> String -> String -> List (Int, Int, TextDecorators)
+    replaceMatch regex decorator filter text =
       case regex of
-          Just rgx ->
+          Just regexMatcher ->
               let
                 match =
-                  Regex.find rgx text
+                  Regex.find regexMatcher text
               in
-                case match of
-                  x::_ ->
-                    String.replace search (replace ++ x.match ++ replace) text
-
-                  [] ->
-                    text
-          Nothing -> text
-
-    processText : String -> String
-    processText text =
-      let
-        italicText = replaceMatch italicRegex "*" "<em>" text
-        boldText = replaceMatch boldRegex "**" "<b>" italicText
-      in
-        boldText
+              case match of
+                  [] -> []
+                  x::xs ->
+                    List.map (\m -> (m.index, m.index + String.length m.match, decorator)) <|
+                    List.filter (\m ->
+                            not <| String.contains filter m.match -- We remove those matches that are hard to exclude with regex.
+                        ) (x::xs)
+          Nothing -> []
   in
-    Html.text (processText input)
+  replaceMatch italicRegex Italic "**" input
+  ++ replaceMatch boldRegex Bold "***" input
+  ++ replaceMatch italicBoldRegex BoldItalic "****" input
+
+-- [(9,18) , (24, 32)] -> (0, 8), (18 + 1, 24 - 1)
+
+buildRemainderIntervals : List (Int, Int, TextDecorators) -> (Int, Int, TextDecorators) -> Bool -> List (Int, Int, TextDecorators)
+buildRemainderIntervals intervals (_,y,_) isFirst =
+    case intervals of
+        [] -> []
+        (a,b,c)::xs ->
+            if isFirst && a > 0 then (0, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False
+            else (y + 1, a - 1, NoDecorator) :: buildRemainderIntervals xs (a,b,c) False
