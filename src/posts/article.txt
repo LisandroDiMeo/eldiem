@@ -15,3 +15,16 @@ switch (anOffer):
 ```
 
 Keep in mind that inside every switch-case, we will end up checking for the user type… very clever right?
+
+### It works! Why we should change it?
+
+Well, first of all, “it’s working” it's just the bare minimum when we are writing software. The real problem is that we are probably using an Object Oriented language, and the fact that *anOffer* is an object, and we -try- to describe our domain specific things with objects, doesn’t imply that we are writing object oriented software. Why? Because *anOffer* is a *dead-object (or dumb)*. It doesn’t do anything in the code before, it’s not *collaborating* in our goal (which is, doing something in the UI after knowing it’s concrete type). So, to sum up this point, it’s never our intention to have objects that doesn’t do anything, because this may lead to:
+
+- Lack of cohesion (in this case, the UI is leading the whole collaboration and the error is just there).
+- Poor representation of our domain (with this representation, we are saying, implicitly, that an error its just a type, and not something that may implies a UI change).
+- Modularity problems. Adding a new error, or modifying existing ones implies touching this code, which usually creates conflicts. Using this philosophy will eventually lead to unmaintainable and odd code.
+
+Luckily, people back then (in the 80s!) already thought a solution for this, which involves giving ****life**** to our objects, and making them to collaborate.
+
+
+

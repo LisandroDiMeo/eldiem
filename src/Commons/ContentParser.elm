@@ -166,23 +166,40 @@ sublistBeforeString str list =
       [] -> []
       x::xs -> if String.contains str x then [] else x :: sublistBeforeString str xs
 
-parseLists : List String -> List (Html msg)
-parseLists lines =
-    let isList = String.startsWith "-"
-        isNestedList s = String.startsWith "  " s |> and <| String.startsWith "-" <| String.trimLeft s
-    in
-    case lines of
+takeLinesWhile : (String -> Bool) -> List String -> List String
+takeLinesWhile condition list =
+    case list of
         [] -> []
+        x::xs -> if condition x then x :: takeLinesWhile condition xs else []
+
+joinTuples : (appendable, appendable) -> (appendable, appendable) -> (appendable, appendable)
+joinTuples (x1, y1) (x2, y2) = (x1 ++ x2, y1 ++ y2)
+
+separateListsBy : (a -> Bool) -> List a -> (List a, List a)
+separateListsBy condition list =
+    case list of
+        [] -> ([], [])
         x::xs ->
-            if isNestedList x then li [] [ ul [] [] ] :: parseLists xs
-            else
-                if isList x then li [] [text x] :: parseLists xs
-                else []
+            if condition x then joinTuples ([x], []) (separateListsBy condition xs) else ([], x::xs)
 
 type MarkdownList =
   Unordered
   | Ordered
 
+markdownListToHtml : MarkdownList -> String -> Html msg
+markdownListToHtml markdownList text =
+  let
+    listItems =
+      String.lines text
+        |> List.filter (\line -> String.trim line /= "")
+        |> List.map (\item -> li [] [ Html.text item ])
+  in
+    case markdownList of
+      Unordered ->
+        ul [] listItems
+
+      Ordered -> -- TODO: I need to fix this...
+        ul [ ] (List.indexedMap (\index item -> li [] [ Html.text <| (String.fromInt (index + 1) ++ ". "), item ]) listItems)
 
 parseMd : List (String) -> Styles msg -> List (Html msg)
 parseMd lines styles =
@@ -195,7 +212,11 @@ parseMd lines styles =
                 H3 -> h3 styles.h3 [text <| String.dropLeft 3 line] :: parseMd nextLines styles
                 H4 -> h4 styles.h4 [text <| String.dropLeft 4 line] :: parseMd nextLines styles
                 CODE -> pre [] [ code [] [text <| String.join "\n" <| sublistBeforeString "```" <| nextLines] ] :: parseMd (sublistAfterString "```" nextLines) styles
-                LIST -> pre [] [ code [] [text <| String.join "\n" <| sublistBeforeString "```" <| nextLines] ] :: parseMd (sublistAfterString "```" nextLines) styles
+                LIST ->
+                    let (listItems, nextItems) = separateListsBy (String.startsWith "-") (line::nextLines)
+                        listString = String.join "\n" listItems
+                    in
+                    markdownListToHtml Unordered listString :: parseMd nextItems styles
                 P -> p styles.p [text line] :: parseMd nextLines styles
                 _ -> []
 
