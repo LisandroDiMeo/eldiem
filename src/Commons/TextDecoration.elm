@@ -25,9 +25,11 @@ view _ =
         a = toHtml s
         b = buildRemainderIntervals a (0,0,NoDecorator) True (String.length s) 0
         t = sortIntervals <| a ++ b
+        orig = Debug.log "Original string is " s
+        content = intervalsToHtml t s
         d0 = Debug.log "All intervals are" t
     in
-    Html.text "Testing"
+    Html.div [] content
 
 type TextDecorators = NoDecorator | Italic | Bold | BoldItalic
 
@@ -73,10 +75,20 @@ buildRemainderIntervals intervals (_,y,_) isFirst length accLength =
 sortIntervals : List (Int, Int, TextDecorators) -> List (Int, Int, TextDecorators)
 sortIntervals intervals = List.sortBy (\(x,_,_) -> x) intervals
 
-intervalsToHtml : List (Int, Int, TextDecorators) -> List (Html msg)
-intervalsToHtml intervals =
+intervalsToHtml : List (Int, Int, TextDecorators) -> String -> List (Html msg)
+intervalsToHtml intervals content =
     List.map (
         \(from, to, decorator) ->
+            let slicer = String.slice from to
+                sliced = slicer content
+                d0 = Debug.log "Slice res is " sliced
+            in
             case decorator of
-                NoDecorator -> text ""
+                NoDecorator -> text <| (slicer content) ++ " "
+                Italic -> Html.i [] [text <| addWhiteSpace <| String.dropLeft 1 <| String.dropRight 1 <| slicer content]
+                Bold -> Html.b [] [text <| addWhiteSpace <| String.dropLeft 2 <| String.dropRight 2 <| slicer content]
+                BoldItalic -> Html.em [] [ Html.b [] [text <| (addWhiteSpace) <| String.dropLeft 3 <| String.dropRight 3 <| slicer content]]
     ) intervals
+
+addWhiteSpace : String -> String
+addWhiteSpace s = s ++ " "
