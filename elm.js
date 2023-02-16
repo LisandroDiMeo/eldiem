@@ -7451,7 +7451,28 @@ var $author$project$Page$LatestPosts$view = function (model) {
 			]),
 		$author$project$Page$LatestPosts$viewLatestPosts(model));
 };
-var $author$project$Commons$ContentParser$customStyles = {a: _List_Nil, b: _List_Nil, code: _List_Nil, h1: _List_Nil, h2: _List_Nil, h3: _List_Nil, h4: _List_Nil, i: _List_Nil, img: _List_Nil, li: _List_Nil, p: _List_Nil, quote: _List_Nil, ul: _List_Nil};
+var $author$project$Commons$ContentParser$customStyles = {
+	a: _List_Nil,
+	b: _List_Nil,
+	code: _List_Nil,
+	h1: _List_Nil,
+	h2: _List_Nil,
+	h3: _List_Nil,
+	h4: _List_Nil,
+	i: _List_Nil,
+	img: _List_Nil,
+	li: _List_Nil,
+	p: _List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('post-paragraph')
+		]),
+	pre: _List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('code')
+		]),
+	quote: _List_Nil,
+	ul: _List_Nil
+};
 var $author$project$Page$Posts$dualPagination = function (postId) {
 	return _List_fromArray(
 		[
@@ -7950,12 +7971,12 @@ var $author$project$Commons$ContentParser$parseMd = F2(
 						$elm$core$List$cons,
 						A2(
 							$elm$html$Html$pre,
-							_List_Nil,
+							styles.pre,
 							_List_fromArray(
 								[
 									A2(
 									$elm$html$Html$code,
-									_List_Nil,
+									styles.code,
 									_List_fromArray(
 										[
 											$elm$html$Html$text(

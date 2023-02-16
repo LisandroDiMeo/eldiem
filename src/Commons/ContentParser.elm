@@ -49,18 +49,13 @@ update msg model =
           (Failure, Cmd.none)
 
 
-
 -- SUBSCRIPTIONS
-
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
 
-
-
 -- VIEW
-
 
 view : Model -> Html Msg
 view model =
@@ -82,47 +77,23 @@ customStyles = {
     , h2 = []
     , h3 = []
     , h4 = []
-    , p = []
+    , p = [
+            class "post-paragraph"
+        ]
     , ul = []
     , li = []
     , a = []
-    , code = []
+    , code = [
+
+        ]
+    , pre = [
+            class "code"
+        ]
     , i = []
     , b = []
     , img = []
     , quote = []
     }
-
-type Tag = Paragraph String | Image String
-
-contentParser : List String -> List (Attribute msg) -> List (Attribute msg) -> List (Html msg)
-contentParser content paragraphAttributes imageAttributes =
-    let tagList = List.map toTag content
-        deb0 = Debug.log "PreParse" content
-    in
-    List.map (\tag ->
-        let deb = Debug.log "Parser" tag
-        in
-        case tag of
-            Paragraph line -> toParagraphTag line paragraphAttributes
-            Image src -> toImageTag src imageAttributes
-    ) tagList
-
-
--- We assume that all images will come in strings of the following format:
--- "${image_src}"
-toImageTag : String -> List (Attribute msg) -> Html msg
-toImageTag line attributes =
-    let imgSrc = String.dropLeft 2 line |> String.dropRight 1
-    in
-    img (src imgSrc :: attributes) []
-
-toParagraphTag : String -> List (Attribute msg) -> Html msg
-toParagraphTag line attributes =
-    p attributes [text line]
-
-toTag : String -> Tag
-toTag line = if line |> contains "$" then Image line else Paragraph line
 
 type MarkdownTag = H1 | H2 | H3 | H4 | P | IMG | LIST | CODE | QUOTE
 
@@ -149,6 +120,7 @@ type alias Styles msg = {
     li : List (Attribute msg) ,
     a : List (Attribute msg) ,
     code : List (Attribute msg) ,
+    pre : List (Attribute msg) ,
     i : List (Attribute msg) ,
     b : List (Attribute msg) ,
     img : List (Attribute msg) ,
@@ -212,7 +184,7 @@ parseMd lines styles =
                 H2 -> h2 styles.h2 [text <| String.dropLeft 2 line] :: parseMd nextLines styles
                 H3 -> h3 styles.h3 [text <| String.dropLeft 3 line] :: parseMd nextLines styles
                 H4 -> h4 styles.h4 [text <| String.dropLeft 4 line] :: parseMd nextLines styles
-                CODE -> pre [] [ code [] [text <| String.join "\n" <| sublistBeforeString "```" <| nextLines] ] :: parseMd (sublistAfterString "```" nextLines) styles
+                CODE -> pre styles.pre [ code styles.code [text <| String.join "\n" <| sublistBeforeString "```" <| nextLines] ] :: parseMd (sublistAfterString "```" nextLines) styles
                 LIST ->
                     let (listItems, nextItems) = separateListsBy (String.startsWith "-") (line::nextLines)
                         listString = String.join "\n" listItems
