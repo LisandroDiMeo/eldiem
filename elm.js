@@ -6725,13 +6725,37 @@ var $author$project$Main$init = F3(
 var $author$project$Main$LinkCopied = function (a) {
 	return {$: 'LinkCopied', a: a};
 };
-var $elm$json$Json$Decode$value = _Json_decodeValue;
-var $author$project$Main$messageReceiver = _Platform_incomingPort('messageReceiver', $elm$json$Json$Decode$value);
+var $author$project$Main$messageReceiver = _Platform_incomingPort(
+	'messageReceiver',
+	$elm$json$Json$Decode$list($elm$json$Json$Decode$string));
 var $author$project$Main$subscriptions = function (_v0) {
 	return $author$project$Main$messageReceiver($author$project$Main$LinkCopied);
 };
+var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
+	return {$: 'OnShareButtonPressed', a: a};
+};
+var $author$project$Page$Posts$ShareButtonPressed = function (a) {
+	return {$: 'ShareButtonPressed', a: a};
+};
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$core$Debug$log = _Debug_log;
+var $author$project$Page$Posts$onShareButtonPressed = function (postToShareModel) {
+	if (postToShareModel.$ === 'Success') {
+		var post = postToShareModel.a;
+		return $author$project$Page$Posts$ShareButtonPressed(post);
+	} else {
+		return postToShareModel;
+	}
+};
 var $elm$url$Url$Builder$toQueryPair = function (_v0) {
 	var key = _v0.a;
 	var value = _v0.b;
@@ -6763,6 +6787,28 @@ var $author$project$Main$postUrlWithId = function (postId) {
 		$author$project$Main$absoluteUrl(postId));
 };
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Main$sendMessage = _Platform_outgoingPort(
+	'sendMessage',
+	$elm$json$Json$Encode$list($elm$json$Json$Encode$string));
+var $elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(xs);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6833,14 +6879,13 @@ var $author$project$Page$LatestPosts$update = F2(
 		}
 	});
 var $author$project$Page$Posts$Failure = {$: 'Failure'};
-var $author$project$Page$Posts$ShareButtonPressed = function (a) {
-	return {$: 'ShareButtonPressed', a: a};
-};
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
 var $author$project$Page$Posts$update = F2(
 	function (msg, model) {
+		var d1 = A2($elm$core$Debug$log, 'test', model);
+		var d0 = A2($elm$core$Debug$log, 'Test', msg);
 		if (msg.$ === 'OnShareButtonPressed') {
 			var post = msg.a;
 			return _Utils_Tuple2(
@@ -6851,7 +6896,8 @@ var $author$project$Page$Posts$update = F2(
 			if (result.$ === 'Ok') {
 				var post = result.a;
 				return _Utils_Tuple2(
-					$author$project$Page$Posts$Success(post),
+					$author$project$Page$Posts$Success(
+						_Utils_Tuple2(post, 2)),
 					$elm$core$Platform$Cmd$none);
 			} else {
 				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
@@ -6866,6 +6912,14 @@ var $elm$core$Maybe$withDefault = F2(
 		} else {
 			return _default;
 		}
+	});
+var $author$project$Main$y = F3(
+	function (post, id, _v0) {
+		return _List_fromArray(
+			[
+				$elm$core$String$fromInt(id),
+				post
+			]);
 	});
 var $author$project$Main$update = F2(
 	function (message, model) {
@@ -6945,17 +6999,49 @@ var $author$project$Main$update = F2(
 							model,
 							A2($author$project$Page$Posts$update, msg, post));
 					} else {
-						return A2(
-							$author$project$Main$stepPost,
+						var _v8 = msg.a;
+						var postContent = _v8.a;
+						var postId = _v8.b;
+						return _Utils_Tuple2(
 							model,
-							A2($author$project$Page$Posts$update, msg, post));
+							$author$project$Main$sendMessage(
+								A3(
+									$author$project$Main$y,
+									postContent,
+									postId,
+									A2(
+										$author$project$Page$Posts$update,
+										msg,
+										$author$project$Page$Posts$onShareButtonPressed(post)))));
 					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
 			default:
-				var json = message.a;
-				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				var postInformation = message.a;
+				var postInfo = A2(
+					$elm$core$Maybe$withDefault,
+					0,
+					$elm$core$String$toInt(
+						A2(
+							$elm$core$Maybe$withDefault,
+							'',
+							$elm$core$List$head(postInformation))));
+				var postContent = A2(
+					$elm$core$Maybe$withDefault,
+					'',
+					$elm$core$List$head(
+						A2(
+							$elm$core$Maybe$withDefault,
+							_List_fromArray(
+								['']),
+							$elm$core$List$tail(postInformation))));
+				var shareMainModel = $author$project$Page$Posts$ShareButtonPressed(
+					_Utils_Tuple2(postContent, postInfo));
+				var shareMsg = $author$project$Page$Posts$OnShareButtonPressed(
+					_Utils_Tuple2(postContent, postInfo));
+				var shareCmd = A2($author$project$Page$Posts$update, shareMsg, shareMainModel);
+				return A2($author$project$Main$stepPost, model, shareCmd);
 		}
 	});
 var $elm$browser$Browser$Document = F2(
@@ -6963,7 +7049,6 @@ var $elm$browser$Browser$Document = F2(
 		return {body: body, title: title};
 	});
 var $elm$html$Html$br = _VirtualDom_node('br');
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -7348,9 +7433,6 @@ var $author$project$Page$LatestPosts$view = function (model) {
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
 		$author$project$Page$LatestPosts$viewLatestPosts(model));
-};
-var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
-	return {$: 'OnShareButtonPressed', a: a};
 };
 var $author$project$Commons$ContentParser$customStyles = {a: _List_Nil, b: _List_Nil, code: _List_Nil, h1: _List_Nil, h2: _List_Nil, h3: _List_Nil, h4: _List_Nil, i: _List_Nil, img: _List_Nil, li: _List_Nil, p: _List_Nil, quote: _List_Nil, ul: _List_Nil};
 var $author$project$Page$Posts$dualPagination = function (postId) {
@@ -7895,8 +7977,8 @@ var $author$project$Commons$ContentParser$parseMd = F2(
 			}
 		}
 	});
-var $author$project$Page$Posts$buildPostBody = F2(
-	function (post, linkCopied) {
+var $author$project$Page$Posts$buildPostBody = F3(
+	function (post, linkCopied, postId) {
 		var shareButtonText = linkCopied ? 'Copied to clipboard!' : 'Share it!';
 		var postContentWithImages = A2($author$project$Commons$ContentParser$parseMd, post, $author$project$Commons$ContentParser$customStyles);
 		return _Utils_ap(
@@ -7915,7 +7997,10 @@ var $author$project$Page$Posts$buildPostBody = F2(
 									[
 										$elm$html$Html$Attributes$src('src/assets/link.png'),
 										$elm$html$Html$Events$onClick(
-										$author$project$Page$Posts$OnShareButtonPressed('')),
+										$author$project$Page$Posts$OnShareButtonPressed(
+											_Utils_Tuple2(
+												A2($elm$core$String$join, '\n', post),
+												postId))),
 										$elm$html$Html$Attributes$width(16),
 										$elm$html$Html$Attributes$height(16),
 										A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
@@ -7924,73 +8009,9 @@ var $author$project$Page$Posts$buildPostBody = F2(
 								$elm$html$Html$text(shareButtonText)
 							]))
 					]),
-				$author$project$Page$Posts$pagination(1)));
-	});
-var $author$project$Commons$ContentParser$toImageTag = F2(
-	function (line, attributes) {
-		var imgSrc = A2(
-			$elm$core$String$dropRight,
-			1,
-			A2($elm$core$String$dropLeft, 2, line));
-		return A2(
-			$elm$html$Html$img,
-			A2(
-				$elm$core$List$cons,
-				$elm$html$Html$Attributes$src(imgSrc),
-				attributes),
-			_List_Nil);
-	});
-var $author$project$Commons$ContentParser$toParagraphTag = F2(
-	function (line, attributes) {
-		return A2(
-			$elm$html$Html$p,
-			attributes,
-			_List_fromArray(
-				[
-					$elm$html$Html$text(line)
-				]));
-	});
-var $author$project$Commons$ContentParser$Image = function (a) {
-	return {$: 'Image', a: a};
-};
-var $author$project$Commons$ContentParser$Paragraph = function (a) {
-	return {$: 'Paragraph', a: a};
-};
-var $author$project$Commons$ContentParser$toTag = function (line) {
-	return A2($elm$core$String$contains, '$', line) ? $author$project$Commons$ContentParser$Image(line) : $author$project$Commons$ContentParser$Paragraph(line);
-};
-var $author$project$Commons$ContentParser$contentParser = F3(
-	function (content, paragraphAttributes, imageAttributes) {
-		var tagList = A2($elm$core$List$map, $author$project$Commons$ContentParser$toTag, content);
-		var deb0 = A2($elm$core$Debug$log, 'PreParse', content);
-		return A2(
-			$elm$core$List$map,
-			function (tag) {
-				var deb = A2($elm$core$Debug$log, 'Parser', tag);
-				if (tag.$ === 'Paragraph') {
-					var line = tag.a;
-					return A2($author$project$Commons$ContentParser$toParagraphTag, line, paragraphAttributes);
-				} else {
-					var src = tag.a;
-					return A2($author$project$Commons$ContentParser$toImageTag, src, imageAttributes);
-				}
-			},
-			tagList);
+				$author$project$Page$Posts$pagination(postId)));
 	});
 var $author$project$Page$Posts$viewPost = function (model) {
-	var postBody = function (postContent) {
-		return A3(
-			$author$project$Commons$ContentParser$contentParser,
-			postContent,
-			_List_Nil,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$width(128),
-					$elm$html$Html$Attributes$height(128),
-					A2($elm$html$Html$Attributes$style, 'display', 'block'),
-					A2($elm$html$Html$Attributes$style, 'padding', '12px 14px')
-				]));
-	};
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
@@ -8015,13 +8036,17 @@ var $author$project$Page$Posts$viewPost = function (model) {
 						]))
 				]);
 		case 'Success':
-			var post = model.a;
+			var _v1 = model.a;
+			var post = _v1.a;
+			var id = _v1.b;
 			var lines = A2($elm$core$String$split, '\n', post);
-			return A2($author$project$Page$Posts$buildPostBody, lines, false);
+			return A3($author$project$Page$Posts$buildPostBody, lines, false, id);
 		default:
-			var post = model.a;
+			var _v2 = model.a;
+			var post = _v2.a;
+			var id = _v2.b;
 			var lines = A2($elm$core$String$split, '\n', post);
-			return A2($author$project$Page$Posts$buildPostBody, lines, true);
+			return A3($author$project$Page$Posts$buildPostBody, lines, true, id);
 	}
 };
 var $author$project$Page$Posts$view = function (model) {

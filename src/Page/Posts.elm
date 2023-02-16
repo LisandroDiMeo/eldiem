@@ -17,17 +17,7 @@ init id = (Loading, getPostWithId id)
 
 -- MODEL
 
-type alias Post = 
-    {
-        title: String,
-        summary: String,
-        content: List String, 
-        date: String,
-        id: Int,
-        references: List String
-    }
-
-type Model = Failure | Loading | Success String | ShareButtonPressed String
+type Model = Failure | Loading | Success (String, Int) | ShareButtonPressed (String, Int)
 
 -- VIEW 
 
@@ -37,34 +27,32 @@ view model =
 
 viewPost : Model -> List (Html Msg)
 viewPost model =
-    let postBody  = (\postContent -> contentParser postContent [] [width 128, height 128, style "display" "block", style "padding" "12px 14px"])
-    in
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
-        Success post ->
+        Success (post, id) ->
             let lines = String.split "\n" post
             in
-            buildPostBody lines False
-        ShareButtonPressed post ->
+            buildPostBody lines False id
+        ShareButtonPressed (post, id) ->
             let lines = String.split "\n" post
             in
-            buildPostBody lines True
+            buildPostBody lines True id
 
-buildPostBody : List (String) -> Bool -> List (Html Msg)
-buildPostBody post linkCopied =
+buildPostBody : List (String) -> Bool -> Int -> List (Html Msg)
+buildPostBody post linkCopied postId =
     let postContentWithImages = parseMd post customStyles
         shareButtonText = if linkCopied then "Copied to clipboard!" else "Share it!"
     in
     postContentWithImages
     ++ [ p [] [
                 img [src "src/assets/link.png"
-                , onClick (OnShareButtonPressed "")
+                , onClick (OnShareButtonPressed ((String.join "\n" post), postId))
                 , width 16
                 , height 16
                 , style "padding-right" "8px"
                 ] [], text shareButtonText ] ]
-    ++ pagination 1
+    ++ pagination postId
 
 
 pagination : Int -> List (Html msg)
@@ -89,16 +77,19 @@ hasPreviousPosts postId = if postId <= 1 then False else True
 
 -- UPDATE 
 
-type Msg = OnShareButtonPressed String | GotPostWithId (Result Http.Error String)
+type Msg = OnShareButtonPressed (String, Int) | GotPostWithId (Result Http.Error String)
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
+    let d0 = Debug.log "Test" msg
+        d1 = Debug.log "test" model
+    in
     case msg of 
         OnShareButtonPressed post ->
             (ShareButtonPressed post, Cmd.none)
         GotPostWithId result -> 
             case result of 
-                Ok post -> (Success post, Cmd.none)
+                Ok post -> (Success (post,2), Cmd.none)
                 Err _ -> (Failure, Cmd.none)
         --OnNextPostButton id -> (Loading, getPostWithId id)
 

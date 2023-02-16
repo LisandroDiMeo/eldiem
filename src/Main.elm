@@ -3,6 +3,7 @@ port module Main exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import Json.Encode as Encode exposing (string)
+import Maybe exposing (withDefault)
 import Url
 import Url.Builder
 import Url.Parser exposing (Parser, (</>), int, oneOf, s, parse)
@@ -40,8 +41,8 @@ type Page
     | LatestPost LatestPosts.Model
     -- | Other
 
-port sendMessage : (Encode.Value) -> Cmd msg
-port messageReceiver : (Encode.Value -> msg) -> Sub msg
+port sendMessage : List (String) -> Cmd msg
+port messageReceiver : (List(String) -> msg) -> Sub msg
 
 -- SUBSCRIPTIONS
 
@@ -113,7 +114,7 @@ type Msg
     | HomeMsg About.Msg
     | LatestPostsMsg LatestPosts.Msg
     | PostsMsg Posts.Msg
-    | LinkCopied Encode.Value
+    | LinkCopied (List String)
 
 postUrlWithId : String -> Maybe Url.Url
 postUrlWithId postId = Url.fromString <| absoluteUrl postId
@@ -157,12 +158,21 @@ update message model =
                     in
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
-                        OnShareButtonPressed _ -> stepPost model (Posts.update msg post)
+                        OnShareButtonPressed (postContent, postId) -> (model, sendMessage <| y postContent postId <| (Posts.update msg (onShareButtonPressed post)))
                             -- (model, sendMessage <| encodePost <| Tuple.first <| (Posts.update msg (onShareButtonPressed post)))
                 _ -> (model, Cmd.none)
 
-        LinkCopied json -> (model, Cmd.none)
+        LinkCopied postInformation ->
+            let postInfo = List.head postInformation |> withDefault "" |> String.toInt |> withDefault 0
+                postContent = List.tail postInformation |> withDefault [""] |> List.head |> withDefault ""
+                shareMsg = OnShareButtonPressed (postContent, postInfo)
+                shareMainModel = ShareButtonPressed (postContent, postInfo)
+                shareCmd = Posts.update shareMsg shareMainModel
+            in
+            stepPost model shareCmd
 
+y : String -> Int -> (Posts.Model, Cmd Posts.Msg) -> List String
+y post id _ = [String.fromInt id, post]
 
 stepHome : Model -> ( About.Model, Cmd About.Msg ) -> (Model, Cmd Msg)
 stepHome model (home, cmds) = ( {model | page = Home home}, Cmd.map HomeMsg cmds )
