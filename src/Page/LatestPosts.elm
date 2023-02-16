@@ -1,4 +1,4 @@
-module Page.Home exposing
+module Page.LatestPosts exposing
   ( Model (..)
   , init
   , Msg (..)
@@ -21,18 +21,18 @@ type Model = Failure | Loading | Success (List (LatestPost))
 type alias LatestPost = { title: String, shortText: String, thumbnailResource: String, id: Int }
 
 init : () -> (Model, Cmd Msg)
-init _ = (Loading, getLatestsPosts)
+init _ = (Loading, getLatestPosts)
 
 -- UPDATE
 type Msg 
-    = OnLatestPostPressed String | GotLatestsPosts (Result Http.Error (List LatestPost))
+    = OnLatestPostPressed String | GotLatestPosts (Result Http.Error (List LatestPost))
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
     case msg of
         OnLatestPostPressed postId ->
             (model, Cmd.none)
-        GotLatestsPosts result -> 
+        GotLatestPosts result ->
             case result of 
                 Ok lp -> (Success lp , Cmd.none)
                 Err _ -> (Failure, Cmd.none)
@@ -41,25 +41,25 @@ update msg model =
 
 view : Model -> Html Msg
 view model = 
-    div [style "padding" "12px 24px 12px 24px"] (viewLatestsPosts model)
+    div [style "padding" "12px 24px 12px 24px"] (viewLatestPosts model)
 
-viewLatestsPosts : Model -> List (Html Msg)
-viewLatestsPosts model = 
+viewLatestPosts : Model -> List (Html Msg)
+viewLatestPosts model =
     case model of 
         Failure -> [p [] [text "Posts not found 😞"]]
         Loading -> [p [] [text "Loading... 🔄"]]
-        Success latestposts -> List.map (\lp -> div [] [
+        Success latestPosts -> List.map (\lp -> div [] [
                 h1 [] [a [href ("#/Posts/" ++ String.fromInt lp.id), style "text-decoration" "none"] [text ("-> " ++ lp.title)]],
                 p [] [text lp.shortText],
                 img [src lp.thumbnailResource, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []
-            ]) (orderPosts latestposts)
+            ]) (orderPosts <| latestPosts)
 
 -- Fetch Posts
 
-getLatestsPosts : Cmd Msg
-getLatestsPosts = Http.get
+getLatestPosts : Cmd Msg
+getLatestPosts = Http.get
     { url = "src/posts/short/short_posts.json"
-    , expect = Http.expectJson GotLatestsPosts (Json.Decode.list latestPostDecoder)
+    , expect = Http.expectJson GotLatestPosts (Json.Decode.list latestPostDecoder)
     }
 
 latestPostDecoder : Decoder LatestPost

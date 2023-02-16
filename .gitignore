@@ -2,3 +2,4 @@
 /src/Old
 .DS_STORE
 /.idea
+/src/*/index.html

@@ -1,11 +1,11 @@
 module Page.Posts exposing (..)
 
+import Commons.ContentParser exposing (customStyles, parseMd)
 import Html exposing (..)
-import Commons.Zip exposing (zip)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode exposing (..)
+import Maybe exposing (withDefault)
 
 -- INIT
 
@@ -14,18 +14,7 @@ init id = (Loading, getPostWithId id)
 
 -- MODEL
 
-type alias Post = 
-    {
-        title: String,
-        summary: String,
-        content: List String, 
-        date: String,
-        id: Int,
-        references: List String,
-        images: List (Maybe String)
-    }
-
-type Model = Failure | Loading | Success Post | ShareButtonPressed Post String
+type Model = Failure | Loading | Success (String, Int) | ShareButtonPressed (String, Int)
 
 -- VIEW 
 
@@ -35,83 +24,89 @@ view model =
 
 viewPost : Model -> List (Html Msg)
 viewPost model =
-    let postBody = List.map (\(content, image) -> 
-            case image of
-                Nothing -> p [] [text content]
-                Just s -> div [] [p [] [text content], img [src s, width 128, height 128, style "display" "block", style "padding" "12px 14px"] []]) 
-        logi = Debug.log "Log View" model
-    in
     case model of 
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
-        Success post -> ([
-            h2 [] [text post.title],
-            p [] [i [] [text post.summary]],
-            p [] [text post.date]
-            ] ++
-            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed post), width 16, height 16, style "padding-right" "8px"] [], text "Share it!" ] ]) ++
-            pagination post
-        ShareButtonPressed post _ -> ([
-            h2 [] [text post.title],
-            p [] [i [] [text post.summary]],
-            p [] [text post.date]
-            ] ++
-            (postBody (zip post.content post.images)) ++ [ p [] [ img [src "src/assets/link.png", onClick (OnShareButtonPressed post), width 16, height 16, style "padding-right" "8px"] [], text "Copied to clipboard!" ] ]) ++
-            pagination post
+        Success (post, id) ->
+            let lines = String.split "\n" post
+            in
+            buildPostBody lines False id
+        ShareButtonPressed (post, id) ->
+            let lines = String.split "\n" post
+            in
+            buildPostBody lines True id
 
-pagination : Post -> List (Html msg)
-pagination post = [
-    div [style "display" "inline-flex"] <| if hasPreviousPosts post then dualPagination post else singlePagination post
+buildPostBody : List (String) -> Bool -> Int -> List (Html Msg)
+buildPostBody post linkCopied postId =
+    let postContentWithImages = parseMd post customStyles
+        shareButtonText = if linkCopied then "Copied to clipboard!" else "Share it!"
+    in
+    postContentWithImages
+    ++ [ p [] [
+                img [src "src/assets/link.png"
+                , onClick (OnShareButtonPressed ((String.join "\n" post), postId))
+                , width 16
+                , height 16
+                , style "padding-right" "8px"
+                ] [], text shareButtonText ] ]
+    ++ pagination postId
+
+
+pagination : Int -> List (Html msg)
+pagination postId = [
+    div [style "display" "inline-flex"] <| if hasPreviousPosts postId then dualPagination postId else singlePagination postId
     ]
 
-dualPagination : Post -> List (Html msg)
-dualPagination post = [
-    a [href <| "#/Posts/" ++ String.fromInt (post.id - 1), style "text-decoration" "none"] [text "<prev"] ,
-    a [href <| "#/Posts/" ++ String.fromInt (post.id + 1), style "text-decoration" "none"] [text "next>"]
+dualPagination : Int -> List (Html msg)
+dualPagination postId = [
+    a [href <| "#/Posts/" ++ String.fromInt (postId - 1), style "text-decoration" "none"] [text "<prev"] ,
+    a [href <| "#/Posts/" ++ String.fromInt (postId + 1), style "text-decoration" "none"] [text "next>"]
     ]
 
-singlePagination : Post -> List (Html msg)
-singlePagination post = [
-    a [href <| "#/Posts/" ++ String.fromInt (post.id + 1), style "text-decoration" "none"] [text "next>"]
+singlePagination : Int -> List (Html msg)
+singlePagination postId = [
+    a [href <| "#/Posts/" ++ String.fromInt (postId + 1), style "text-decoration" "none"] [text "next>"]
     ]
 
 
-hasPreviousPosts : Post -> Bool
-hasPreviousPosts post = if post.id <= 1 then False else True
+hasPreviousPosts : Int -> Bool
+hasPreviousPosts postId = if postId <= 1 then False else True
+
 -- UPDATE 
 
-type Msg = OnShareButtonPressed Post | GotPostWithId (Result Http.Error Post)
+type Msg = OnShareButtonPressed (String, Int) | GotPostWithId (Result Http.Error (String))
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
-    let logi = Debug.log "Log Update" msg
-    in
     case msg of 
         OnShareButtonPressed post ->
-            (ShareButtonPressed post "", Cmd.none)
-        GotPostWithId result -> 
+            (ShareButtonPressed post, Cmd.none)
+        GotPostWithId result ->
+            let d0 = Debug.log "Msg" msg
+                d1 = Debug.log "Model" model
+                d2 = Debug.log "Res" result
+            in
             case result of 
-                Ok post -> (Success post, Cmd.none)
+                Ok post ->
+                    let
+                        postIdHeader = post |> String.left 10
+                        postId = postIdHeader |> String.right 3 |> String.toInt |> withDefault 0
+                    in
+                    (Success (post |> String.dropLeft 10, postId), Cmd.none)
                 Err _ -> (Failure, Cmd.none)
         --OnNextPostButton id -> (Loading, getPostWithId id)
 
 getPostWithId : Int -> Cmd Msg
 getPostWithId id = Http.get
-    { url = "src/posts/long/post"++(postIdToRealId id)++".json"
-    , expect = Http.expectJson GotPostWithId (postDecoder)
+    { url = "src/posts/long/post"++(postIdToRealId id)++".txt"
+    , expect = Http.expectString GotPostWithId
     }
 
 postIdToRealId : Int -> String
 postIdToRealId id = String.fromInt id |> (\rid -> if (String.length rid < 3) then (if (String.length rid) == 1 then "00" else "0") ++ rid else rid) 
 
-postDecoder : Decoder Post
-postDecoder = 
-    map7 Post
-        (field "title" string)
-        (field "summary" string)
-        (field "content" (Json.Decode.list string))
-        (field "date" string)
-        (field "id" int)
-        (field "references" (Json.Decode.list string))
-        (field "images" (Json.Decode.list (maybe string)))
-
+onShareButtonPressed : Model -> Model
+onShareButtonPressed postToShareModel =
+    case postToShareModel of
+        Success post -> ShareButtonPressed post
+        _ -> postToShareModel

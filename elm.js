@@ -4562,7 +4562,108 @@ function _Url_percentDecode(string)
 	{
 		return $elm$core$Maybe$Nothing;
 	}
-}var $author$project$Main$LinkClicked = function (a) {
+}
+
+// CREATE
+
+var _Regex_never = /.^/;
+
+var _Regex_fromStringWith = F2(function(options, string)
+{
+	var flags = 'g';
+	if (options.multiline) { flags += 'm'; }
+	if (options.caseInsensitive) { flags += 'i'; }
+
+	try
+	{
+		return $elm$core$Maybe$Just(new RegExp(string, flags));
+	}
+	catch(error)
+	{
+		return $elm$core$Maybe$Nothing;
+	}
+});
+
+
+// USE
+
+var _Regex_contains = F2(function(re, string)
+{
+	return string.match(re) !== null;
+});
+
+
+var _Regex_findAtMost = F3(function(n, re, str)
+{
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex == re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch
+				? $elm$core$Maybe$Just(submatch)
+				: $elm$core$Maybe$Nothing;
+		}
+		out.push(A4($elm$regex$Regex$Match, result[0], result.index, number, _List_fromArray(subs)));
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _List_fromArray(out);
+});
+
+
+var _Regex_replaceAtMost = F4(function(n, re, replacer, string)
+{
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch
+				? $elm$core$Maybe$Just(submatch)
+				: $elm$core$Maybe$Nothing;
+		}
+		return replacer(A4($elm$regex$Regex$Match, match, arguments[arguments.length - 2], count, _List_fromArray(submatches)));
+	}
+	return string.replace(re, jsReplacer);
+});
+
+var _Regex_splitAtMost = F3(function(n, re, str)
+{
+	var string = str;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		var result = re.exec(string);
+		if (!result) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _List_fromArray(out);
+});
+
+var _Regex_infinity = Infinity;
+var $author$project$Main$LinkClicked = function (a) {
 	return {$: 'LinkClicked', a: a};
 };
 var $author$project$Main$UrlChanged = function (a) {
@@ -5360,19 +5461,20 @@ var $elm$browser$Browser$application = _Browser_application;
 var $author$project$Main$Home = function (a) {
 	return {$: 'Home', a: a};
 };
-var $author$project$Page$Home$Loading = {$: 'Loading'};
-var $author$project$Main$NotFound = {$: 'NotFound'};
-var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Sciences 🖥️ at FCEN,  Universidad de Buenos Aires.' + ('%Currently I\'m part of a research internship at LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms 🧬.' + ('%Additionaly I work at Wolox part of Accenture as an Android Lead Developer 🤖.' + '%Beyond that, I really like music 🎵 (I play the guitar), photography 📷, and nature ⛰️.'));
 var $author$project$Page$About$Model = F2(
 	function (title, content) {
 		return {content: content, title: title};
 	});
+var $author$project$Page$About$aboutMe = 'I\'m finishing my M.Sc. in Computer Sciences 🖥️ at FCEN,  Universidad de Buenos Aires.' + ('%Currently I\'m part of a research internship at LAFHIS, where I\'m working with Automatic Testing Generation for Android Apps using Genetic Algorithms 🧬.' + ('%Additionaly I work at Wolox part of Accenture as an Android Lead Developer 🤖.' + '%Beyond that, I really like music 🎵 (I play the guitar), photography 📷, and nature ⛰️.'));
+var $author$project$Page$About$staticAbout = A2($author$project$Page$About$Model, '', $author$project$Page$About$aboutMe);
+var $author$project$Main$NotFound = {$: 'NotFound'};
 var $author$project$Page$About$init = F2(
 	function (title, content) {
 		return A2($author$project$Page$About$Model, title, content);
 	});
-var $author$project$Page$Home$GotLatestsPosts = function (a) {
-	return {$: 'GotLatestsPosts', a: a};
+var $author$project$Page$LatestPosts$Loading = {$: 'Loading'};
+var $author$project$Page$LatestPosts$GotLatestPosts = function (a) {
+	return {$: 'GotLatestPosts', a: a};
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
@@ -6161,7 +6263,7 @@ var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$Page$Home$LatestPost = F4(
+var $author$project$Page$LatestPosts$LatestPost = F4(
 	function (title, shortText, thumbnailResource, id) {
 		return {id: id, shortText: shortText, thumbnailResource: thumbnailResource, title: title};
 	});
@@ -6169,63 +6271,35 @@ var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$map4 = _Json_map4;
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Page$Home$latestPostDecoder = A5(
+var $author$project$Page$LatestPosts$latestPostDecoder = A5(
 	$elm$json$Json$Decode$map4,
-	$author$project$Page$Home$LatestPost,
+	$author$project$Page$LatestPosts$LatestPost,
 	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'shortText', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'thumbnailResource', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$Page$Home$getLatestsPosts = $elm$http$Http$get(
+var $author$project$Page$LatestPosts$getLatestPosts = $elm$http$Http$get(
 	{
 		expect: A2(
 			$elm$http$Http$expectJson,
-			$author$project$Page$Home$GotLatestsPosts,
-			$elm$json$Json$Decode$list($author$project$Page$Home$latestPostDecoder)),
+			$author$project$Page$LatestPosts$GotLatestPosts,
+			$elm$json$Json$Decode$list($author$project$Page$LatestPosts$latestPostDecoder)),
 		url: 'src/posts/short/short_posts.json'
 	});
-var $author$project$Page$Home$init = function (_v0) {
-	return _Utils_Tuple2($author$project$Page$Home$Loading, $author$project$Page$Home$getLatestsPosts);
+var $author$project$Page$LatestPosts$init = function (_v0) {
+	return _Utils_Tuple2($author$project$Page$LatestPosts$Loading, $author$project$Page$LatestPosts$getLatestPosts);
 };
 var $author$project$Page$Posts$Loading = {$: 'Loading'};
 var $author$project$Page$Posts$GotPostWithId = function (a) {
 	return {$: 'GotPostWithId', a: a};
 };
-var $author$project$Page$Posts$Post = F7(
-	function (title, summary, content, date, id, references, images) {
-		return {content: content, date: date, id: id, images: images, references: references, summary: summary, title: title};
-	});
-var $elm$json$Json$Decode$map7 = _Json_map7;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$maybe = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
-				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
-			]));
+var $elm$http$Http$expectString = function (toMsg) {
+	return A2(
+		$elm$http$Http$expectStringResponse,
+		toMsg,
+		$elm$http$Http$resolve($elm$core$Result$Ok));
 };
-var $author$project$Page$Posts$postDecoder = A8(
-	$elm$json$Json$Decode$map7,
-	$author$project$Page$Posts$Post,
-	A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'summary', $elm$json$Json$Decode$string),
-	A2(
-		$elm$json$Json$Decode$field,
-		'content',
-		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
-	A2($elm$json$Json$Decode$field, 'date', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
-	A2(
-		$elm$json$Json$Decode$field,
-		'references',
-		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'images',
-		$elm$json$Json$Decode$list(
-			$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string))));
 var $author$project$Page$Posts$postIdToRealId = function (id) {
 	return function (rid) {
 		return ($elm$core$String$length(rid) < 3) ? _Utils_ap(
@@ -6237,8 +6311,8 @@ var $author$project$Page$Posts$postIdToRealId = function (id) {
 var $author$project$Page$Posts$getPostWithId = function (id) {
 	return $elm$http$Http$get(
 		{
-			expect: A2($elm$http$Http$expectJson, $author$project$Page$Posts$GotPostWithId, $author$project$Page$Posts$postDecoder),
-			url: 'src/posts/long/post' + ($author$project$Page$Posts$postIdToRealId(id) + '.json')
+			expect: $elm$http$Http$expectString($author$project$Page$Posts$GotPostWithId),
+			url: 'src/posts/long/post' + ($author$project$Page$Posts$postIdToRealId(id) + '.txt')
 		});
 };
 var $author$project$Page$Posts$init = function (id) {
@@ -6506,28 +6580,10 @@ var $elm$url$Url$Parser$slash = F2(
 					parseBefore(state));
 			});
 	});
-var $author$project$Main$About = function (a) {
-	return {$: 'About', a: a};
-};
-var $author$project$Main$AboutMsg = function (a) {
-	return {$: 'AboutMsg', a: a};
-};
-var $elm$core$Platform$Cmd$map = _Platform_map;
-var $author$project$Main$stepAbout = F2(
-	function (model, _v0) {
-		var about = _v0.a;
-		var cmds = _v0.b;
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{
-					page: $author$project$Main$About(about)
-				}),
-			A2($elm$core$Platform$Cmd$map, $author$project$Main$AboutMsg, cmds));
-	});
 var $author$project$Main$HomeMsg = function (a) {
 	return {$: 'HomeMsg', a: a};
 };
+var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$stepHome = F2(
 	function (model, _v0) {
 		var home = _v0.a;
@@ -6539,6 +6595,24 @@ var $author$project$Main$stepHome = F2(
 					page: $author$project$Main$Home(home)
 				}),
 			A2($elm$core$Platform$Cmd$map, $author$project$Main$HomeMsg, cmds));
+	});
+var $author$project$Main$LatestPost = function (a) {
+	return {$: 'LatestPost', a: a};
+};
+var $author$project$Main$LatestPostsMsg = function (a) {
+	return {$: 'LatestPostsMsg', a: a};
+};
+var $author$project$Main$stepLatestPosts = F2(
+	function (model, _v0) {
+		var home = _v0.a;
+		var cmds = _v0.b;
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					page: $author$project$Main$LatestPost(home)
+				}),
+			A2($elm$core$Platform$Cmd$map, $author$project$Main$LatestPostsMsg, cmds));
 	});
 var $author$project$Main$Posts = function (a) {
 	return {$: 'Posts', a: a};
@@ -6574,23 +6648,25 @@ var $author$project$Main$stepUrl = F2(
 					A2(
 						$author$project$Main$stepHome,
 						model,
-						$author$project$Page$Home$init(_Utils_Tuple0))),
+						_Utils_Tuple2(
+							A2($author$project$Page$About$init, 'Home', $author$project$Page$About$aboutMe),
+							$elm$core$Platform$Cmd$none))),
 					A2(
 					$author$project$Main$route,
 					$elm$url$Url$Parser$s('Home'),
 					A2(
 						$author$project$Main$stepHome,
 						model,
-						$author$project$Page$Home$init(_Utils_Tuple0))),
+						_Utils_Tuple2(
+							A2($author$project$Page$About$init, 'Home', $author$project$Page$About$aboutMe),
+							$elm$core$Platform$Cmd$none))),
 					A2(
 					$author$project$Main$route,
-					$elm$url$Url$Parser$s('About'),
+					$elm$url$Url$Parser$s('LatestPosts'),
 					A2(
-						$author$project$Main$stepAbout,
+						$author$project$Main$stepLatestPosts,
 						model,
-						_Utils_Tuple2(
-							A2($author$project$Page$About$init, 'About', $author$project$Page$About$aboutMe),
-							$elm$core$Platform$Cmd$none))),
+						$author$project$Page$LatestPosts$init(_Utils_Tuple0))),
 					A2(
 					$author$project$Main$route,
 					A2(
@@ -6617,8 +6693,8 @@ var $author$project$Main$stepUrl = F2(
 				path: function () {
 					var _v1 = url.fragment;
 					if (_v1.$ === 'Just') {
-						var s = _v1.a;
-						return s;
+						var str = _v1.a;
+						return str;
 					} else {
 						return '';
 					}
@@ -6643,15 +6719,43 @@ var $author$project$Main$init = F3(
 			url,
 			{
 				key: key,
-				page: $author$project$Main$Home($author$project$Page$Home$Loading)
+				page: $author$project$Main$Home($author$project$Page$About$staticAbout)
 			});
 	});
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Main$subscriptions = function (model) {
-	return $elm$core$Platform$Sub$none;
+var $author$project$Main$LinkCopied = function (a) {
+	return {$: 'LinkCopied', a: a};
+};
+var $author$project$Main$messageReceiver = _Platform_incomingPort(
+	'messageReceiver',
+	$elm$json$Json$Decode$list($elm$json$Json$Decode$string));
+var $author$project$Main$subscriptions = function (_v0) {
+	return $author$project$Main$messageReceiver($author$project$Main$LinkCopied);
+};
+var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
+	return {$: 'OnShareButtonPressed', a: a};
+};
+var $author$project$Page$Posts$ShareButtonPressed = function (a) {
+	return {$: 'ShareButtonPressed', a: a};
+};
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $elm$core$Debug$log = _Debug_log;
+var $author$project$Page$Posts$onShareButtonPressed = function (postToShareModel) {
+	if (postToShareModel.$ === 'Success') {
+		var post = postToShareModel.a;
+		return $author$project$Page$Posts$ShareButtonPressed(post);
+	} else {
+		return postToShareModel;
+	}
+};
 var $elm$url$Url$Builder$toQueryPair = function (_v0) {
 	var key = _v0.a;
 	var value = _v0.b;
@@ -6683,8 +6787,28 @@ var $author$project$Main$postUrlWithId = function (postId) {
 		$author$project$Main$absoluteUrl(postId));
 };
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
+var $author$project$Main$sendMessage = _Platform_outgoingPort(
+	'sendMessage',
+	$elm$json$Json$Encode$list($elm$json$Json$Encode$string));
+var $elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(xs);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6733,11 +6857,11 @@ var $author$project$Page$About$update = F2(
 	function (_v0, model) {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	});
-var $author$project$Page$Home$Failure = {$: 'Failure'};
-var $author$project$Page$Home$Success = function (a) {
+var $author$project$Page$LatestPosts$Failure = {$: 'Failure'};
+var $author$project$Page$LatestPosts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $author$project$Page$Home$update = F2(
+var $author$project$Page$LatestPosts$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'OnLatestPostPressed') {
 			var postId = msg.a;
@@ -6747,41 +6871,27 @@ var $author$project$Page$Home$update = F2(
 			if (result.$ === 'Ok') {
 				var lp = result.a;
 				return _Utils_Tuple2(
-					$author$project$Page$Home$Success(lp),
+					$author$project$Page$LatestPosts$Success(lp),
 					$elm$core$Platform$Cmd$none);
 			} else {
-				return _Utils_Tuple2($author$project$Page$Home$Failure, $elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2($author$project$Page$LatestPosts$Failure, $elm$core$Platform$Cmd$none);
 			}
 		}
 	});
 var $author$project$Page$Posts$Failure = {$: 'Failure'};
-var $author$project$Page$Posts$ShareButtonPressed = F2(
-	function (a, b) {
-		return {$: 'ShareButtonPressed', a: a, b: b};
-	});
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $elm$core$Debug$log = _Debug_log;
-var $author$project$Page$Posts$update = F2(
-	function (msg, model) {
-		var logi = A2($elm$core$Debug$log, 'Log Update', msg);
-		if (msg.$ === 'OnShareButtonPressed') {
-			var post = msg.a;
-			return _Utils_Tuple2(
-				A2($author$project$Page$Posts$ShareButtonPressed, post, ''),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			var result = msg.a;
-			if (result.$ === 'Ok') {
-				var post = result.a;
-				return _Utils_Tuple2(
-					$author$project$Page$Posts$Success(post),
-					$elm$core$Platform$Cmd$none);
-			} else {
-				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
-			}
-		}
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$core$String$right = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3(
+			$elm$core$String$slice,
+			-n,
+			$elm$core$String$length(string),
+			string);
 	});
 var $elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
@@ -6791,6 +6901,45 @@ var $elm$core$Maybe$withDefault = F2(
 		} else {
 			return _default;
 		}
+	});
+var $author$project$Page$Posts$update = F2(
+	function (msg, model) {
+		if (msg.$ === 'OnShareButtonPressed') {
+			var post = msg.a;
+			return _Utils_Tuple2(
+				$author$project$Page$Posts$ShareButtonPressed(post),
+				$elm$core$Platform$Cmd$none);
+		} else {
+			var result = msg.a;
+			var d2 = A2($elm$core$Debug$log, 'Res', result);
+			var d1 = A2($elm$core$Debug$log, 'Model', model);
+			var d0 = A2($elm$core$Debug$log, 'Msg', msg);
+			if (result.$ === 'Ok') {
+				var post = result.a;
+				var postIdHeader = A2($elm$core$String$left, 10, post);
+				var postId = A2(
+					$elm$core$Maybe$withDefault,
+					0,
+					$elm$core$String$toInt(
+						A2($elm$core$String$right, 3, postIdHeader)));
+				return _Utils_Tuple2(
+					$author$project$Page$Posts$Success(
+						_Utils_Tuple2(
+							A2($elm$core$String$dropLeft, 10, post),
+							postId)),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
+			}
+		}
+	});
+var $author$project$Main$y = F3(
+	function (post, id, _v0) {
+		return _List_fromArray(
+			[
+				$elm$core$String$fromInt(id),
+				post
+			]);
 	});
 var $author$project$Main$update = F2(
 	function (message, model) {
@@ -6820,17 +6969,29 @@ var $author$project$Main$update = F2(
 				var msg = message.a;
 				var _v2 = model.page;
 				if (_v2.$ === 'Home') {
-					var home = _v2.a;
-					if (msg.$ === 'GotLatestsPosts') {
+					var about = _v2.a;
+					return A2(
+						$author$project$Main$stepHome,
+						model,
+						A2($author$project$Page$About$update, msg, about));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'LatestPostsMsg':
+				var msg = message.a;
+				var _v3 = model.page;
+				if (_v3.$ === 'LatestPost') {
+					var home = _v3.a;
+					if (msg.$ === 'GotLatestPosts') {
 						return A2(
-							$author$project$Main$stepHome,
+							$author$project$Main$stepLatestPosts,
 							model,
-							A2($author$project$Page$Home$update, msg, home));
+							A2($author$project$Page$LatestPosts$update, msg, home));
 					} else {
 						var postId = msg.a;
-						var _v4 = $author$project$Main$postUrlWithId(postId);
-						if (_v4.$ === 'Just') {
-							var postUrl = _v4.a;
+						var _v5 = $author$project$Main$postUrlWithId(postId);
+						if (_v5.$ === 'Just') {
+							var postUrl = _v5.a;
 							return A2(
 								$author$project$Main$stepPost,
 								model,
@@ -6846,36 +7007,61 @@ var $author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
-			case 'AboutMsg':
-				var msg = message.a;
-				var _v5 = model.page;
-				if (_v5.$ === 'About') {
-					var about = _v5.a;
-					return A2(
-						$author$project$Main$stepAbout,
-						model,
-						A2($author$project$Page$About$update, msg, about));
-				} else {
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
-			default:
+			case 'PostsMsg':
 				var msg = message.a;
 				var _v6 = model.page;
 				if (_v6.$ === 'Posts') {
 					var post = _v6.a;
+					var d = A2($elm$core$Debug$log, 'MainPostLog', post);
 					if (msg.$ === 'GotPostWithId') {
 						return A2(
 							$author$project$Main$stepPost,
 							model,
 							A2($author$project$Page$Posts$update, msg, post));
 					} else {
+						var _v8 = msg.a;
+						var postContent = _v8.a;
+						var postId = _v8.b;
 						return _Utils_Tuple2(
 							model,
-							$author$project$Main$sendMessage('Current link copied to clipboard!'));
+							$author$project$Main$sendMessage(
+								A3(
+									$author$project$Main$y,
+									postContent,
+									postId,
+									A2(
+										$author$project$Page$Posts$update,
+										msg,
+										$author$project$Page$Posts$onShareButtonPressed(post)))));
 					}
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
+			default:
+				var postInformation = message.a;
+				var postInfo = A2(
+					$elm$core$Maybe$withDefault,
+					0,
+					$elm$core$String$toInt(
+						A2(
+							$elm$core$Maybe$withDefault,
+							'',
+							$elm$core$List$head(postInformation))));
+				var postContent = A2(
+					$elm$core$Maybe$withDefault,
+					'',
+					$elm$core$List$head(
+						A2(
+							$elm$core$Maybe$withDefault,
+							_List_fromArray(
+								['']),
+							$elm$core$List$tail(postInformation))));
+				var shareMainModel = $author$project$Page$Posts$ShareButtonPressed(
+					_Utils_Tuple2(postContent, postInfo));
+				var shareMsg = $author$project$Page$Posts$OnShareButtonPressed(
+					_Utils_Tuple2(postContent, postInfo));
+				var shareCmd = A2($author$project$Page$Posts$update, shareMsg, shareMainModel);
+				return A2($author$project$Main$stepPost, model, shareCmd);
 		}
 	});
 var $elm$browser$Browser$Document = F2(
@@ -6993,8 +7179,7 @@ var $author$project$Components$Footer$footer = A2(
 var $author$project$Main$navBarTabs = _List_fromArray(
 	[
 		{imageResource: 'finder.png', onPressed: $elm$core$Maybe$Nothing, title: 'Home'},
-		{imageResource: 'floppydisk.png', onPressed: $elm$core$Maybe$Nothing, title: 'Posts'},
-		{imageResource: 'coffee.png', onPressed: $elm$core$Maybe$Nothing, title: 'About'},
+		{imageResource: 'floppydisk.png', onPressed: $elm$core$Maybe$Nothing, title: 'LatestPosts'},
 		{imageResource: 'misc.png', onPressed: $elm$core$Maybe$Nothing, title: 'Other'}
 	]);
 var $elm$html$Html$nav = _VirtualDom_node('nav');
@@ -7177,15 +7362,12 @@ var $author$project$Page$About$view = function (model) {
 					]))
 			]));
 };
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var $elm$core$List$sortBy = _List_sortBy;
-var $author$project$Page$Home$orderPosts = $elm$core$List$sortBy(
+var $author$project$Page$LatestPosts$orderPosts = $elm$core$List$sortBy(
 	function (p) {
 		return (-1) * p.id;
 	});
-var $author$project$Page$Home$viewLatestsPosts = function (model) {
+var $author$project$Page$LatestPosts$viewLatestPosts = function (model) {
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
@@ -7210,7 +7392,7 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 						]))
 				]);
 		default:
-			var latestposts = model.a;
+			var latestPosts = model.a;
 			return A2(
 				$elm$core$List$map,
 				function (lp) {
@@ -7257,24 +7439,41 @@ var $author$project$Page$Home$viewLatestsPosts = function (model) {
 								_List_Nil)
 							]));
 				},
-				$author$project$Page$Home$orderPosts(latestposts));
+				$author$project$Page$LatestPosts$orderPosts(latestPosts));
 	}
 };
-var $author$project$Page$Home$view = function (model) {
+var $author$project$Page$LatestPosts$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
 				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
 			]),
-		$author$project$Page$Home$viewLatestsPosts(model));
+		$author$project$Page$LatestPosts$viewLatestPosts(model));
 };
-var $author$project$Page$Posts$OnShareButtonPressed = function (a) {
-	return {$: 'OnShareButtonPressed', a: a};
+var $author$project$Commons$ContentParser$customStyles = {
+	a: _List_Nil,
+	b: _List_Nil,
+	code: _List_Nil,
+	h1: _List_Nil,
+	h2: _List_Nil,
+	h3: _List_Nil,
+	h4: _List_Nil,
+	i: _List_Nil,
+	img: _List_Nil,
+	li: _List_Nil,
+	p: _List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('post-paragraph')
+		]),
+	pre: _List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('code')
+		]),
+	quote: _List_Nil,
+	ul: _List_Nil
 };
-var $elm$html$Html$h2 = _VirtualDom_node('h2');
-var $elm$html$Html$i = _VirtualDom_node('i');
-var $author$project$Page$Posts$dualPagination = function (post) {
+var $author$project$Page$Posts$dualPagination = function (postId) {
 	return _List_fromArray(
 		[
 			A2(
@@ -7282,7 +7481,7 @@ var $author$project$Page$Posts$dualPagination = function (post) {
 			_List_fromArray(
 				[
 					$elm$html$Html$Attributes$href(
-					'#/Posts/' + $elm$core$String$fromInt(post.id - 1)),
+					'#/Posts/' + $elm$core$String$fromInt(postId - 1)),
 					A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
 				]),
 			_List_fromArray(
@@ -7294,7 +7493,7 @@ var $author$project$Page$Posts$dualPagination = function (post) {
 			_List_fromArray(
 				[
 					$elm$html$Html$Attributes$href(
-					'#/Posts/' + $elm$core$String$fromInt(post.id + 1)),
+					'#/Posts/' + $elm$core$String$fromInt(postId + 1)),
 					A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
 				]),
 			_List_fromArray(
@@ -7303,10 +7502,10 @@ var $author$project$Page$Posts$dualPagination = function (post) {
 				]))
 		]);
 };
-var $author$project$Page$Posts$hasPreviousPosts = function (post) {
-	return (post.id <= 1) ? false : true;
+var $author$project$Page$Posts$hasPreviousPosts = function (postId) {
+	return (postId <= 1) ? false : true;
 };
-var $author$project$Page$Posts$singlePagination = function (post) {
+var $author$project$Page$Posts$singlePagination = function (postId) {
 	return _List_fromArray(
 		[
 			A2(
@@ -7314,7 +7513,7 @@ var $author$project$Page$Posts$singlePagination = function (post) {
 			_List_fromArray(
 				[
 					$elm$html$Html$Attributes$href(
-					'#/Posts/' + $elm$core$String$fromInt(post.id + 1)),
+					'#/Posts/' + $elm$core$String$fromInt(postId + 1)),
 					A2($elm$html$Html$Attributes$style, 'text-decoration', 'none')
 				]),
 			_List_fromArray(
@@ -7323,7 +7522,7 @@ var $author$project$Page$Posts$singlePagination = function (post) {
 				]))
 		]);
 };
-var $author$project$Page$Posts$pagination = function (post) {
+var $author$project$Page$Posts$pagination = function (postId) {
 	return _List_fromArray(
 		[
 			A2(
@@ -7332,59 +7531,525 @@ var $author$project$Page$Posts$pagination = function (post) {
 				[
 					A2($elm$html$Html$Attributes$style, 'display', 'inline-flex')
 				]),
-			$author$project$Page$Posts$hasPreviousPosts(post) ? $author$project$Page$Posts$dualPagination(post) : $author$project$Page$Posts$singlePagination(post))
+			$author$project$Page$Posts$hasPreviousPosts(postId) ? $author$project$Page$Posts$dualPagination(postId) : $author$project$Page$Posts$singlePagination(postId))
 		]);
 };
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
+var $author$project$Commons$ContentParser$Unordered = {$: 'Unordered'};
+var $author$project$Commons$TextDecoration$NoDecorator = {$: 'NoDecorator'};
+var $author$project$Commons$TextDecoration$buildRemainderIntervals = F5(
+	function (intervals, _v0, isFirst, length, accLength) {
+		var y = _v0.b;
+		if (!intervals.b) {
+			return (_Utils_cmp(accLength, length) < 0) ? _List_fromArray(
+				[
+					_Utils_Tuple3(y, length, $author$project$Commons$TextDecoration$NoDecorator)
+				]) : _List_Nil;
+		} else {
+			var _v2 = intervals.a;
+			var a = _v2.a;
+			var b = _v2.b;
+			var c = _v2.c;
+			var xs = intervals.b;
+			return (isFirst && (a > 0)) ? A2(
+				$elm$core$List$cons,
+				_Utils_Tuple3(0, a, $author$project$Commons$TextDecoration$NoDecorator),
+				A5(
+					$author$project$Commons$TextDecoration$buildRemainderIntervals,
+					xs,
+					_Utils_Tuple3(a, b, c),
+					false,
+					length,
+					(accLength + b) - a)) : A2(
+				$elm$core$List$cons,
+				_Utils_Tuple3(y, a, $author$project$Commons$TextDecoration$NoDecorator),
+				A5(
+					$author$project$Commons$TextDecoration$buildRemainderIntervals,
+					xs,
+					_Utils_Tuple3(a, b, c),
+					false,
+					length,
+					(accLength + b) - a));
+		}
 	});
-var $author$project$Commons$Zip$zip = F2(
-	function (l1, l2) {
-		return A3($elm$core$List$map2, $elm$core$Tuple$pair, l1, l2);
+var $elm$html$Html$b = _VirtualDom_node('b');
+var $elm$core$String$dropRight = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3($elm$core$String$slice, 0, -n, string);
 	});
-var $author$project$Page$Posts$viewPost = function (model) {
-	var postBody = $elm$core$List$map(
-		function (_v1) {
-			var content = _v1.a;
-			var image = _v1.b;
-			if (image.$ === 'Nothing') {
-				return A2(
-					$elm$html$Html$p,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(content)
-						]));
-			} else {
-				var s = image.a;
-				return A2(
-					$elm$html$Html$div,
-					_List_Nil,
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$p,
+var $elm$html$Html$em = _VirtualDom_node('em');
+var $elm$html$Html$i = _VirtualDom_node('i');
+var $author$project$Commons$TextDecoration$intervalsToHtml = F2(
+	function (intervals, content) {
+		return A2(
+			$elm$core$List$map,
+			function (_v0) {
+				var from = _v0.a;
+				var to = _v0.b;
+				var decorator = _v0.c;
+				var slicer = A2($elm$core$String$slice, from, to);
+				switch (decorator.$) {
+					case 'NoDecorator':
+						return $elm$html$Html$text(
+							slicer(content));
+					case 'Italic':
+						return A2(
+							$elm$html$Html$i,
 							_List_Nil,
 							_List_fromArray(
 								[
-									$elm$html$Html$text(content)
-								])),
-							A2(
-							$elm$html$Html$img,
+									$elm$html$Html$text(
+									A2(
+										$elm$core$String$dropLeft,
+										1,
+										A2(
+											$elm$core$String$dropRight,
+											1,
+											slicer(content))))
+								]));
+					case 'Bold':
+						return A2(
+							$elm$html$Html$b,
+							_List_Nil,
 							_List_fromArray(
 								[
-									$elm$html$Html$Attributes$src(s),
-									$elm$html$Html$Attributes$width(128),
-									$elm$html$Html$Attributes$height(128),
-									A2($elm$html$Html$Attributes$style, 'display', 'block'),
-									A2($elm$html$Html$Attributes$style, 'padding', '12px 14px')
-								]),
-							_List_Nil)
-						]));
+									$elm$html$Html$text(
+									A2(
+										$elm$core$String$dropLeft,
+										2,
+										A2(
+											$elm$core$String$dropRight,
+											2,
+											slicer(content))))
+								]));
+					default:
+						return A2(
+							$elm$html$Html$em,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$b,
+									_List_Nil,
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											A2(
+												$elm$core$String$dropLeft,
+												3,
+												A2(
+													$elm$core$String$dropRight,
+													3,
+													slicer(content))))
+										]))
+								]));
+				}
+			},
+			intervals);
+	});
+var $author$project$Commons$TextDecoration$sortIntervals = function (intervals) {
+	return A2(
+		$elm$core$List$sortBy,
+		function (_v0) {
+			var x = _v0.a;
+			return x;
+		},
+		intervals);
+};
+var $author$project$Commons$TextDecoration$Bold = {$: 'Bold'};
+var $author$project$Commons$TextDecoration$BoldItalic = {$: 'BoldItalic'};
+var $author$project$Commons$TextDecoration$Italic = {$: 'Italic'};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$regex$Regex$Match = F4(
+	function (match, index, number, submatches) {
+		return {index: index, match: match, number: number, submatches: submatches};
+	});
+var $elm$regex$Regex$find = _Regex_findAtMost(_Regex_infinity);
+var $elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
+var $elm$regex$Regex$fromString = function (string) {
+	return A2(
+		$elm$regex$Regex$fromStringWith,
+		{caseInsensitive: false, multiline: false},
+		string);
+};
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$Commons$TextDecoration$toHtml = function (input) {
+	var replaceMatch = F4(
+		function (regex, decorator, filter, text) {
+			if (regex.$ === 'Just') {
+				var regexMatcher = regex.a;
+				var match = A2($elm$regex$Regex$find, regexMatcher, text);
+				if (!match.b) {
+					return _List_Nil;
+				} else {
+					var x = match.a;
+					var xs = match.b;
+					return A2(
+						$elm$core$List$map,
+						function (m) {
+							return _Utils_Tuple3(
+								m.index,
+								m.index + $elm$core$String$length(m.match),
+								decorator);
+						},
+						A2(
+							$elm$core$List$filter,
+							function (m) {
+								return !A2($elm$core$String$contains, filter, m.match);
+							},
+							A2($elm$core$List$cons, x, xs)));
+				}
+			} else {
+				return _List_Nil;
 			}
 		});
-	var logi = A2($elm$core$Debug$log, 'Log View', model);
+	var italicRegex = $elm$regex$Regex$fromString('\\*(.*?)\\*');
+	var italicBoldRegex = $elm$regex$Regex$fromString('\\*\\*\\*(.*?)\\*\\*\\*');
+	var boldRegex = $elm$regex$Regex$fromString('\\*\\*(.*?)\\*\\*');
+	return _Utils_ap(
+		A4(replaceMatch, italicRegex, $author$project$Commons$TextDecoration$Italic, '**', input),
+		_Utils_ap(
+			A4(replaceMatch, boldRegex, $author$project$Commons$TextDecoration$Bold, '***', input),
+			A4(replaceMatch, italicBoldRegex, $author$project$Commons$TextDecoration$BoldItalic, '****', input)));
+};
+var $author$project$Commons$TextDecoration$buildHtmlText = function (content) {
+	var a = $author$project$Commons$TextDecoration$toHtml(content);
+	var b = A5(
+		$author$project$Commons$TextDecoration$buildRemainderIntervals,
+		a,
+		_Utils_Tuple3(0, 0, $author$project$Commons$TextDecoration$NoDecorator),
+		true,
+		$elm$core$String$length(content),
+		0);
+	var t = $author$project$Commons$TextDecoration$sortIntervals(
+		_Utils_ap(a, b));
+	return A2($author$project$Commons$TextDecoration$intervalsToHtml, t, content);
+};
+var $elm$html$Html$code = _VirtualDom_node('code');
+var $author$project$Commons$ContentParser$P = {$: 'P'};
+var $author$project$Commons$ContentParser$firstOf = F2(
+	function (checkers, elem) {
+		firstOf:
+		while (true) {
+			if (!checkers.b) {
+				return $author$project$Commons$ContentParser$P;
+			} else {
+				var x = checkers.a;
+				var xs = checkers.b;
+				var _v1 = x(elem);
+				if (_v1.$ === 'Just') {
+					var res = _v1.a;
+					return res;
+				} else {
+					var $temp$checkers = xs,
+						$temp$elem = elem;
+					checkers = $temp$checkers;
+					elem = $temp$elem;
+					continue firstOf;
+				}
+			}
+		}
+	});
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $elm$html$Html$h3 = _VirtualDom_node('h3');
+var $elm$html$Html$h4 = _VirtualDom_node('h4');
+var $elm$core$String$lines = _String_lines;
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $elm$core$String$trim = _String_trim;
+var $author$project$Commons$ContentParser$markdownListToHtml = F2(
+	function (markdownList, text) {
+		var listItems = A2(
+			$elm$core$List$map,
+			function (item) {
+				return A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							A2($elm$core$String$dropLeft, 2, item))
+						]));
+			},
+			A2(
+				$elm$core$List$filter,
+				function (line) {
+					return $elm$core$String$trim(line) !== '';
+				},
+				$elm$core$String$lines(text)));
+		if (markdownList.$ === 'Unordered') {
+			return A2($elm$html$Html$ul, _List_Nil, listItems);
+		} else {
+			return A2(
+				$elm$html$Html$ul,
+				_List_Nil,
+				A2(
+					$elm$core$List$indexedMap,
+					F2(
+						function (index, item) {
+							return A2(
+								$elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										$elm$core$String$fromInt(index + 1) + '. '),
+										item
+									]));
+						}),
+					listItems));
+		}
+	});
+var $author$project$Commons$ContentParser$CODE = {$: 'CODE'};
+var $author$project$Commons$ContentParser$H1 = {$: 'H1'};
+var $author$project$Commons$ContentParser$H2 = {$: 'H2'};
+var $author$project$Commons$ContentParser$H3 = {$: 'H3'};
+var $author$project$Commons$ContentParser$H4 = {$: 'H4'};
+var $author$project$Commons$ContentParser$IMG = {$: 'IMG'};
+var $author$project$Commons$ContentParser$LIST = {$: 'LIST'};
+var $author$project$Commons$ContentParser$QUOTE = {$: 'QUOTE'};
+var $author$project$Commons$ContentParser$matchers = _List_fromArray(
+	[
+		function (s) {
+		return ((A2($elm$core$String$left, 1, s) === '#') && (A2($elm$core$String$left, 2, s) !== '##')) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$H1) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return ((A2($elm$core$String$left, 2, s) === '##') && (A2($elm$core$String$left, 3, s) !== '###')) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$H2) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return ((A2($elm$core$String$left, 3, s) === '###') && (A2($elm$core$String$left, 4, s) !== '####')) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$H3) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return ((A2($elm$core$String$left, 4, s) === '####') && (A2($elm$core$String$left, 5, s) !== '#####')) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$H4) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return (A2($elm$core$String$left, 3, s) === '```') ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$CODE) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return A2($elm$core$String$startsWith, '-', s) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$LIST) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return A2($elm$core$String$startsWith, '>', s) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$QUOTE) : $elm$core$Maybe$Nothing;
+	},
+		function (s) {
+		return A2($elm$core$String$startsWith, '![', s) ? $elm$core$Maybe$Just($author$project$Commons$ContentParser$IMG) : $elm$core$Maybe$Nothing;
+	},
+		function (_v0) {
+		return $elm$core$Maybe$Just($author$project$Commons$ContentParser$P);
+	}
+	]);
+var $elm$html$Html$pre = _VirtualDom_node('pre');
+var $author$project$Commons$ContentParser$joinTuples = F2(
+	function (_v0, _v1) {
+		var x1 = _v0.a;
+		var y1 = _v0.b;
+		var x2 = _v1.a;
+		var y2 = _v1.b;
+		return _Utils_Tuple2(
+			_Utils_ap(x1, x2),
+			_Utils_ap(y1, y2));
+	});
+var $author$project$Commons$ContentParser$separateListsBy = F2(
+	function (condition, list) {
+		if (!list.b) {
+			return _Utils_Tuple2(_List_Nil, _List_Nil);
+		} else {
+			var x = list.a;
+			var xs = list.b;
+			return condition(x) ? A2(
+				$author$project$Commons$ContentParser$joinTuples,
+				_Utils_Tuple2(
+					_List_fromArray(
+						[x]),
+					_List_Nil),
+				A2($author$project$Commons$ContentParser$separateListsBy, condition, xs)) : _Utils_Tuple2(
+				_List_Nil,
+				A2($elm$core$List$cons, x, xs));
+		}
+	});
+var $author$project$Commons$ContentParser$sublistAfterString = F2(
+	function (str, list) {
+		sublistAfterString:
+		while (true) {
+			if (!list.b) {
+				return _List_Nil;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (A2($elm$core$String$contains, str, x)) {
+					return xs;
+				} else {
+					var $temp$str = str,
+						$temp$list = xs;
+					str = $temp$str;
+					list = $temp$list;
+					continue sublistAfterString;
+				}
+			}
+		}
+	});
+var $author$project$Commons$ContentParser$sublistBeforeString = F2(
+	function (str, list) {
+		if (!list.b) {
+			return _List_Nil;
+		} else {
+			var x = list.a;
+			var xs = list.b;
+			return A2($elm$core$String$contains, str, x) ? _List_Nil : A2(
+				$elm$core$List$cons,
+				x,
+				A2($author$project$Commons$ContentParser$sublistBeforeString, str, xs));
+		}
+	});
+var $author$project$Commons$ContentParser$parseMd = F2(
+	function (lines, styles) {
+		if (!lines.b) {
+			return _List_Nil;
+		} else {
+			var line = lines.a;
+			var nextLines = lines.b;
+			var _v1 = A2($author$project$Commons$ContentParser$firstOf, $author$project$Commons$ContentParser$matchers, line);
+			switch (_v1.$) {
+				case 'H1':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$h1,
+							styles.h1,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2($elm$core$String$dropLeft, 1, line))
+								])),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
+				case 'H2':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$h2,
+							styles.h2,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2($elm$core$String$dropLeft, 2, line))
+								])),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
+				case 'H3':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$h3,
+							styles.h3,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2($elm$core$String$dropLeft, 3, line))
+								])),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
+				case 'H4':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$h4,
+							styles.h4,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2($elm$core$String$dropLeft, 4, line))
+								])),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
+				case 'CODE':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$pre,
+							styles.pre,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$code,
+									styles.code,
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											A2(
+												$elm$core$String$join,
+												'\n',
+												A2($author$project$Commons$ContentParser$sublistBeforeString, '```', nextLines)))
+										]))
+								])),
+						A2(
+							$author$project$Commons$ContentParser$parseMd,
+							A2($author$project$Commons$ContentParser$sublistAfterString, '```', nextLines),
+							styles));
+				case 'LIST':
+					var _v2 = A2(
+						$author$project$Commons$ContentParser$separateListsBy,
+						$elm$core$String$startsWith('-'),
+						A2($elm$core$List$cons, line, nextLines));
+					var listItems = _v2.a;
+					var nextItems = _v2.b;
+					var listString = A2($elm$core$String$join, '\n', listItems);
+					return A2(
+						$elm$core$List$cons,
+						A2($author$project$Commons$ContentParser$markdownListToHtml, $author$project$Commons$ContentParser$Unordered, listString),
+						A2($author$project$Commons$ContentParser$parseMd, nextItems, styles));
+				case 'P':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$p,
+							styles.p,
+							$author$project$Commons$TextDecoration$buildHtmlText(line)),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
+				default:
+					return _List_Nil;
+			}
+		}
+	});
+var $author$project$Page$Posts$buildPostBody = F3(
+	function (post, linkCopied, postId) {
+		var shareButtonText = linkCopied ? 'Copied to clipboard!' : 'Share it!';
+		var postContentWithImages = A2($author$project$Commons$ContentParser$parseMd, post, $author$project$Commons$ContentParser$customStyles);
+		return _Utils_ap(
+			postContentWithImages,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$p,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$img,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$src('src/assets/link.png'),
+										$elm$html$Html$Events$onClick(
+										$author$project$Page$Posts$OnShareButtonPressed(
+											_Utils_Tuple2(
+												A2($elm$core$String$join, '\n', post),
+												postId))),
+										$elm$html$Html$Attributes$width(16),
+										$elm$html$Html$Attributes$height(16),
+										A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
+									]),
+								_List_Nil),
+								$elm$html$Html$text(shareButtonText)
+							]))
+					]),
+				$author$project$Page$Posts$pagination(postId)));
+	});
+var $author$project$Page$Posts$viewPost = function (model) {
 	switch (model.$) {
 		case 'Failure':
 			return _List_fromArray(
@@ -7409,125 +8074,17 @@ var $author$project$Page$Posts$viewPost = function (model) {
 						]))
 				]);
 		case 'Success':
-			var post = model.a;
-			return _Utils_ap(
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$h2,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.title)
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									A2(
-									$elm$html$Html$i,
-									_List_Nil,
-									_List_fromArray(
-										[
-											$elm$html$Html$text(post.summary)
-										]))
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.date)
-								]))
-						]),
-					_Utils_ap(
-						postBody(
-							A2($author$project$Commons$Zip$zip, post.content, post.images)),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$p,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$img,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$src('src/assets/link.png'),
-												$elm$html$Html$Events$onClick(
-												$author$project$Page$Posts$OnShareButtonPressed(post)),
-												$elm$html$Html$Attributes$width(16),
-												$elm$html$Html$Attributes$height(16),
-												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-											]),
-										_List_Nil),
-										$elm$html$Html$text('Share it!')
-									]))
-							]))),
-				$author$project$Page$Posts$pagination(post));
+			var _v1 = model.a;
+			var post = _v1.a;
+			var id = _v1.b;
+			var lines = A2($elm$core$String$split, '\n', post);
+			return A3($author$project$Page$Posts$buildPostBody, lines, false, id);
 		default:
-			var post = model.a;
-			return _Utils_ap(
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$h2,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.title)
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									A2(
-									$elm$html$Html$i,
-									_List_Nil,
-									_List_fromArray(
-										[
-											$elm$html$Html$text(post.summary)
-										]))
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(post.date)
-								]))
-						]),
-					_Utils_ap(
-						postBody(
-							A2($author$project$Commons$Zip$zip, post.content, post.images)),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$p,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$img,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$src('src/assets/link.png'),
-												$elm$html$Html$Events$onClick(
-												$author$project$Page$Posts$OnShareButtonPressed(post)),
-												$elm$html$Html$Attributes$width(16),
-												$elm$html$Html$Attributes$height(16),
-												A2($elm$html$Html$Attributes$style, 'padding-right', '8px')
-											]),
-										_List_Nil),
-										$elm$html$Html$text('Copied to clipboard!')
-									]))
-							]))),
-				$author$project$Page$Posts$pagination(post));
+			var _v2 = model.a;
+			var post = _v2.a;
+			var id = _v2.b;
+			var lines = A2($elm$core$String$split, '\n', post);
+			return A3($author$project$Page$Posts$buildPostBody, lines, true, id);
 	}
 };
 var $author$project$Page$Posts$view = function (model) {
@@ -7542,17 +8099,14 @@ var $author$project$Page$Posts$view = function (model) {
 var $author$project$Main$wrapperFor = function (page) {
 	switch (page.$) {
 		case 'Home':
-			var home = page.a;
+			var about = page.a;
 			return A2(
 				$elm$browser$Browser$Document,
 				'Home',
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						A2(
-						$elm$html$Html$map,
-						$author$project$Main$HomeMsg,
-						$author$project$Page$Home$view(home)),
+						$author$project$Page$About$view(about),
 						$author$project$Components$Footer$footer
 					]));
 		case 'NotFound':
@@ -7561,15 +8115,18 @@ var $author$project$Main$wrapperFor = function (page) {
 				'NotFound',
 				_List_fromArray(
 					[$author$project$Main$header, $author$project$Components$Footer$footer]));
-		case 'About':
-			var about = page.a;
+		case 'LatestPost':
+			var latestPosts = page.a;
 			return A2(
 				$elm$browser$Browser$Document,
-				'About',
+				'LatestPosts',
 				_List_fromArray(
 					[
 						$author$project$Main$header,
-						$author$project$Page$About$view(about),
+						A2(
+						$elm$html$Html$map,
+						$author$project$Main$LatestPostsMsg,
+						$author$project$Page$LatestPosts$view(latestPosts)),
 						$author$project$Components$Footer$footer
 					]));
 		default:
