@@ -6882,27 +6882,16 @@ var $author$project$Page$Posts$Failure = {$: 'Failure'};
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $author$project$Page$Posts$update = F2(
-	function (msg, model) {
-		var d1 = A2($elm$core$Debug$log, 'test', model);
-		var d0 = A2($elm$core$Debug$log, 'Test', msg);
-		if (msg.$ === 'OnShareButtonPressed') {
-			var post = msg.a;
-			return _Utils_Tuple2(
-				$author$project$Page$Posts$ShareButtonPressed(post),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			var result = msg.a;
-			if (result.$ === 'Ok') {
-				var post = result.a;
-				return _Utils_Tuple2(
-					$author$project$Page$Posts$Success(
-						_Utils_Tuple2(post, 2)),
-					$elm$core$Platform$Cmd$none);
-			} else {
-				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
-			}
-		}
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$core$String$right = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3(
+			$elm$core$String$slice,
+			-n,
+			$elm$core$String$length(string),
+			string);
 	});
 var $elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
@@ -6911,6 +6900,37 @@ var $elm$core$Maybe$withDefault = F2(
 			return value;
 		} else {
 			return _default;
+		}
+	});
+var $author$project$Page$Posts$update = F2(
+	function (msg, model) {
+		if (msg.$ === 'OnShareButtonPressed') {
+			var post = msg.a;
+			return _Utils_Tuple2(
+				$author$project$Page$Posts$ShareButtonPressed(post),
+				$elm$core$Platform$Cmd$none);
+		} else {
+			var result = msg.a;
+			var d2 = A2($elm$core$Debug$log, 'Res', result);
+			var d1 = A2($elm$core$Debug$log, 'Model', model);
+			var d0 = A2($elm$core$Debug$log, 'Msg', msg);
+			if (result.$ === 'Ok') {
+				var post = result.a;
+				var postIdHeader = A2($elm$core$String$left, 10, post);
+				var postId = A2(
+					$elm$core$Maybe$withDefault,
+					0,
+					$elm$core$String$toInt(
+						A2($elm$core$String$right, 3, postIdHeader)));
+				return _Utils_Tuple2(
+					$author$project$Page$Posts$Success(
+						_Utils_Tuple2(
+							A2($elm$core$String$dropLeft, 10, post),
+							postId)),
+					$elm$core$Platform$Cmd$none);
+			} else {
+				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
+			}
 		}
 	});
 var $author$project$Main$y = F3(
@@ -7341,9 +7361,6 @@ var $author$project$Page$About$view = function (model) {
 						_List_Nil)
 					]))
 			]));
-};
-var $elm$core$Basics$negate = function (n) {
-	return -n;
 };
 var $elm$core$List$sortBy = _List_sortBy;
 var $author$project$Page$LatestPosts$orderPosts = $elm$core$List$sortBy(

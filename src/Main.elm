@@ -159,7 +159,6 @@ update message model =
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
                         OnShareButtonPressed (postContent, postId) -> (model, sendMessage <| y postContent postId <| (Posts.update msg (onShareButtonPressed post)))
-                            -- (model, sendMessage <| encodePost <| Tuple.first <| (Posts.update msg (onShareButtonPressed post)))
                 _ -> (model, Cmd.none)
 
         LinkCopied postInformation ->

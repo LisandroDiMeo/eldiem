@@ -9,6 +9,7 @@ import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (..)
 import Json.Encode as Encode
+import Maybe exposing (withDefault)
 
 -- INIT
 
@@ -77,19 +78,25 @@ hasPreviousPosts postId = if postId <= 1 then False else True
 
 -- UPDATE 
 
-type Msg = OnShareButtonPressed (String, Int) | GotPostWithId (Result Http.Error String)
+type Msg = OnShareButtonPressed (String, Int) | GotPostWithId (Result Http.Error (String))
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
-    let d0 = Debug.log "Test" msg
-        d1 = Debug.log "test" model
-    in
     case msg of 
         OnShareButtonPressed post ->
             (ShareButtonPressed post, Cmd.none)
-        GotPostWithId result -> 
+        GotPostWithId result ->
+            let d0 = Debug.log "Msg" msg
+                d1 = Debug.log "Model" model
+                d2 = Debug.log "Res" result
+            in
             case result of 
-                Ok post -> (Success (post,2), Cmd.none)
+                Ok post ->
+                    let
+                        postIdHeader = post |> String.left 10
+                        postId = postIdHeader |> String.right 3 |> String.toInt |> withDefault 0
+                    in
+                    (Success (post |> String.dropLeft 10, postId), Cmd.none)
                 Err _ -> (Failure, Cmd.none)
         --OnNextPostButton id -> (Loading, getPostWithId id)
 
