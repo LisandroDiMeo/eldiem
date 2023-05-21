@@ -1,10 +1,12 @@
-module Page.Posts exposing (..)
+port module Page.Posts exposing (..)
 
 import Commons.ContentParser exposing (customStyles, parseMd)
+import Commons.TakeWhile exposing (takeWhileExclusive)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http
+import Json.Decode as Json exposing (Error)
 import Maybe exposing (withDefault)
 
 -- INIT
@@ -16,11 +18,19 @@ init id = (Loading, getPostWithId id)
 
 type Model = Failure | Loading | Success (String, Int) | ShareButtonPressed (String, Int)
 
+type alias PostHeader =
+    { postId : String
+    , hasCode : Bool
+    }
+
+-- PORT
+port syntaxColoringRequested : (Bool) -> Cmd msg
+
 -- VIEW 
 
 view : Model -> Html Msg
 view model = 
-    div [style "padding" "12px 24px 12px 24px"] (viewPost model)
+    div [style "padding" "12px 24px 12px 24px", class "markdown-body"] (viewPost model)
 
 viewPost : Model -> List (Html Msg)
 viewPost model =
@@ -28,7 +38,7 @@ viewPost model =
         Failure -> [ p [] [text "That post doesn't exist (yet)!🤯"] ]
         Loading -> [p [] [text "Loading... 🔄"]]
         Success (post, id) ->
-            let lines = String.split "\n" post
+            let lines = String.split "\n" post |> List.tail |> withDefault []
             in
             buildPostBody lines False id
         ShareButtonPressed (post, id) ->
@@ -76,25 +86,21 @@ hasPreviousPosts postId = if postId <= 1 then False else True
 
 type Msg = OnShareButtonPressed (String, Int) | GotPostWithId (Result Http.Error (String))
 
-update : Msg -> Model -> (Model, Cmd msg)
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of 
         OnShareButtonPressed post ->
             (ShareButtonPressed post, Cmd.none)
         GotPostWithId result ->
-            let d0 = Debug.log "Msg" msg
-                d1 = Debug.log "Model" model
-                d2 = Debug.log "Res" result
-            in
             case result of 
                 Ok post ->
                     let
-                        postIdHeader = post |> String.left 10
-                        postId = postIdHeader |> String.right 3 |> String.toInt |> withDefault 0
+                        postHeader = parseWithDefaultHeaderString <| takeWhileExclusive (\c -> c == "\n") post
+                        postId = postHeader.postId |> String.toInt |> withDefault 0
+                        successModel = Success (post, postId)
                     in
-                    (Success (post |> String.dropLeft 10, postId), Cmd.none)
+                    (successModel, Cmd.batch [syntaxColoringRequested postHeader.hasCode, Cmd.none] )
                 Err _ -> (Failure, Cmd.none)
-        --OnNextPostButton id -> (Loading, getPostWithId id)
 
 getPostWithId : Int -> Cmd Msg
 getPostWithId id = Http.get
@@ -110,3 +116,21 @@ onShareButtonPressed postToShareModel =
     case postToShareModel of
         Success post -> ShareButtonPressed post
         _ -> postToShareModel
+
+decoder: Json.Decoder PostHeader
+decoder =
+    Json.map2 PostHeader
+        (Json.field "postId" Json.string)
+        (Json.field "hasCode" Json.bool)
+
+parsePostHeaderString : String -> Result Error PostHeader
+parsePostHeaderString jsonString = Json.decodeString decoder jsonString
+
+parseWithDefaultHeaderString : String -> PostHeader
+parseWithDefaultHeaderString jsonString =
+    let parsingResult = parsePostHeaderString jsonString
+    in
+    case parsingResult of
+        Ok postHeader -> postHeader
+        Err _ -> PostHeader "" False
+

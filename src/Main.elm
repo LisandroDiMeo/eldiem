@@ -154,8 +154,6 @@ update message model =
         PostsMsg msg ->
             case model.page of
                 Posts post ->
-                    let d = Debug.log "MainPostLog" post
-                    in
                     case msg of
                         GotPostWithId _ -> stepPost model (Posts.update msg post)
                         OnShareButtonPressed (postContent, postId) -> (model, sendMessage <| y postContent postId <| (Posts.update msg (onShareButtonPressed post)))

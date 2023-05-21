@@ -8,9 +8,35 @@
 * {
     font-family: 'FiraCode', monospace;
     letter-spacing: .1rem;
-    background-color: #15202B;
     color: #fff;
-}   
+}
+
+body {
+    background-color: #15202B;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  margin: .67em 0;
+  font-weight: 600;
+  padding-bottom: .3em;
+  font-size: 2em;
+  border-bottom: 2px solid #e3e3e3;
+}
+
 
 body{ 
     display:flex; 
@@ -46,27 +72,12 @@ a{
     height: 24px;
 }
 
-.code {
-  background-color: #000;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-family: "Courier New", Courier, monospace;
-  padding: 10px;
-}
-
-.code code {
-  background-color: inherit;
-  border: none;
-}
-
 .post-paragraph {
     padding-top: 6px;
     padding-bottom: 6px;
     padding-left: 8px;
     padding-right: 8px;
 }
-
-
 
 footer{
     padding-top: 32px !important;
@@ -94,6 +105,29 @@ footer{
     left: 0;
 }
 
+.thumbnail-1 {
+    width: 240px;
+    height: 240px;
+}
+
+blockquote {
+  background: #e3e3e3;
+  border-left: 10px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 1.5em 10px;
+  color: #000;
+}
+blockquote:before {
+  color: #ccc;
+  font-size: 4em;
+  line-height: 0.1em;
+  margin-right: 0.25em;
+  vertical-align: -0.4em;
+}
+blockquote p {
+  display: inline;
+}
+
 .appearing {
    animation: fadeIn 2s;
    -webkit-animation: fadeIn 2s;
@@ -109,6 +143,15 @@ footer{
    -o-animation: fadeOut ease 2s;
    -ms-animation: fadeOut ease 2s;
    animation-fill-mode: forwards;
+}
+
+/* Media query para pantallas grandes */
+@media screen and (min-width: 420px) {
+/*"padding" "12px 24px 12px 24px"*/
+  .post-container {
+    padding-right: 96px; /* Agrega el padding solo en pantallas grandes */
+    padding-left: 24px;
+  }
 }
 
 @keyframes fadeIn {
