@@ -5,6 +5,10 @@
   <title>Main</title>
   <style>body { padding: 0; margin: 0; }</style>
   <link href="src/main.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" data-manual></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-kotlin.min.js" data-manual></script>
+
   <script src="elm.js"></script>
 </head>
 
@@ -22,6 +26,20 @@
           navigator.clipboard.writeText(url);
           app.ports.messageReceiver.send(message);
         });
+        app.ports.syntaxColoringRequested.subscribe(function(message){
+          console.log("Called");
+          console.log(message);
+          if(message == true)
+            window.requestAnimationFrame(requestSyntaxColoring);
+        });
+        function requestSyntaxColoring() {
+          let query = document.querySelector(".token");
+          if (query == null) {
+            Prism.highlightAll();
+            window.requestAnimationFrame(requestSyntaxColoring);
+          }
+        }
+        // window.requestAnimationFrame(requestSyntaxColoring);
 </script>
 </body>
 

@@ -84,14 +84,14 @@ customStyles = {
     , li = []
     , a = []
     , code = [
-
+            class "language-kotlin"
         ]
     , pre = [
-            class "code"
+            class "language-kotlin"
         ]
     , i = []
     , b = []
-    , img = []
+    , img = (\styles url -> src url :: styles)
     , quote = []
     }
 
@@ -123,7 +123,7 @@ type alias Styles msg = {
     pre : List (Attribute msg) ,
     i : List (Attribute msg) ,
     b : List (Attribute msg) ,
-    img : List (Attribute msg) ,
+    img : List (Attribute msg) -> String -> List (Attribute msg) ,
     quote : List (Attribute msg)
     }
 
@@ -174,6 +174,17 @@ markdownListToHtml markdownList text =
       Ordered -> -- TODO: I need to fix this...
         ul [ ] (List.indexedMap (\index item -> li [] [ Html.text <| (String.fromInt (index + 1) ++ ". "), item ]) listItems)
 
+getImageUrlFromImgMarkdownTag : String -> String
+getImageUrlFromImgMarkdownTag tag =
+    tag
+    |> String.split "]"
+    |> List.tail
+    |> Maybe.withDefault []
+    |> List.head
+    |> Maybe.withDefault ""
+    |> String.dropLeft 1
+    |> String.dropRight 1
+
 parseMd : List (String) -> Styles msg -> List (Html msg)
 parseMd lines styles =
     case lines of
@@ -191,7 +202,8 @@ parseMd lines styles =
                     in
                     markdownListToHtml Unordered listString :: parseMd nextItems styles
                 P -> p styles.p (buildHtmlText <| line) :: parseMd nextLines styles
-                _ -> []
+                IMG -> img (styles.img [class "thumbnail-1"] <| getImageUrlFromImgMarkdownTag line) [] :: parseMd nextLines styles
+                QUOTE -> blockquote styles.quote [text <| String.dropLeft 1 line] :: parseMd nextLines styles
 
 firstOf : List (String -> Maybe MarkdownTag) -> String -> MarkdownTag
 firstOf checkers elem =

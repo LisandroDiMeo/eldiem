@@ -1,4 +1,13 @@
-postId:001
+{"postId":"001","hasCode":false}
 # Welcome
 
 Created: February 11, 2023 5:43 PM
+
+Hola, welcome to my site! Here I'll try to share some knowledge that I hope will arouse curiosity in the reader.
+Of course everything written here is open to discuss 😄.
+For any inquire, feel free to contact me here:
+📧 ldimeo@dc.uba.ar
+
+![Elm, a functional language that inspired multiple declarative UI frameworks](src/posts/images/001/elmlogo.png)
+
+> Side Note: This site is made with Elm. Of course there are others alternatives, but it's been a while since I've wanted to give this language an opportunity 🌳.

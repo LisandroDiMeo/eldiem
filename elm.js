@@ -6747,7 +6747,6 @@ var $elm$core$List$head = function (list) {
 	}
 };
 var $elm$browser$Browser$Navigation$load = _Browser_load;
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Page$Posts$onShareButtonPressed = function (postToShareModel) {
 	if (postToShareModel.$ === 'Success') {
 		var post = postToShareModel.a;
@@ -6882,16 +6881,39 @@ var $author$project$Page$Posts$Failure = {$: 'Failure'};
 var $author$project$Page$Posts$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $elm$core$Basics$negate = function (n) {
-	return -n;
+var $author$project$Page$Posts$PostHeader = F2(
+	function (postId, hasCode) {
+		return {hasCode: hasCode, postId: postId};
+	});
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $author$project$Page$Posts$decoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Page$Posts$PostHeader,
+	A2($elm$json$Json$Decode$field, 'postId', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'hasCode', $elm$json$Json$Decode$bool));
+var $author$project$Page$Posts$parsePostHeaderString = function (jsonString) {
+	return A2($elm$json$Json$Decode$decodeString, $author$project$Page$Posts$decoder, jsonString);
 };
-var $elm$core$String$right = F2(
-	function (n, string) {
-		return (n < 1) ? '' : A3(
-			$elm$core$String$slice,
-			-n,
-			$elm$core$String$length(string),
-			string);
+var $author$project$Page$Posts$parseWithDefaultHeaderString = function (jsonString) {
+	var parsingResult = $author$project$Page$Posts$parsePostHeaderString(jsonString);
+	if (parsingResult.$ === 'Ok') {
+		var postHeader = parsingResult.a;
+		return postHeader;
+	} else {
+		return A2($author$project$Page$Posts$PostHeader, '', false);
+	}
+};
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $author$project$Page$Posts$syntaxColoringRequested = _Platform_outgoingPort('syntaxColoringRequested', $elm$json$Json$Encode$bool);
+var $author$project$Commons$TakeWhile$takeWhileExclusive = F2(
+	function (cond, s) {
+		var c = A2($elm$core$String$left, 1, s);
+		return cond(c) ? '' : _Utils_ap(
+			c,
+			A2(
+				$author$project$Commons$TakeWhile$takeWhileExclusive,
+				cond,
+				A2($elm$core$String$dropLeft, 1, s)));
 	});
 var $elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
@@ -6911,23 +6933,29 @@ var $author$project$Page$Posts$update = F2(
 				$elm$core$Platform$Cmd$none);
 		} else {
 			var result = msg.a;
-			var d2 = A2($elm$core$Debug$log, 'Res', result);
-			var d1 = A2($elm$core$Debug$log, 'Model', model);
-			var d0 = A2($elm$core$Debug$log, 'Msg', msg);
 			if (result.$ === 'Ok') {
 				var post = result.a;
-				var postIdHeader = A2($elm$core$String$left, 10, post);
+				var postHeader = $author$project$Page$Posts$parseWithDefaultHeaderString(
+					A2(
+						$author$project$Commons$TakeWhile$takeWhileExclusive,
+						function (c) {
+							return c === '\n';
+						},
+						post));
 				var postId = A2(
 					$elm$core$Maybe$withDefault,
 					0,
-					$elm$core$String$toInt(
-						A2($elm$core$String$right, 3, postIdHeader)));
+					$elm$core$String$toInt(postHeader.postId));
+				var successModel = $author$project$Page$Posts$Success(
+					_Utils_Tuple2(post, postId));
 				return _Utils_Tuple2(
-					$author$project$Page$Posts$Success(
-						_Utils_Tuple2(
-							A2($elm$core$String$dropLeft, 10, post),
-							postId)),
-					$elm$core$Platform$Cmd$none);
+					successModel,
+					$elm$core$Platform$Cmd$batch(
+						_List_fromArray(
+							[
+								$author$project$Page$Posts$syntaxColoringRequested(postHeader.hasCode),
+								$elm$core$Platform$Cmd$none
+							])));
 			} else {
 				return _Utils_Tuple2($author$project$Page$Posts$Failure, $elm$core$Platform$Cmd$none);
 			}
@@ -7012,7 +7040,6 @@ var $author$project$Main$update = F2(
 				var _v6 = model.page;
 				if (_v6.$ === 'Posts') {
 					var post = _v6.a;
-					var d = A2($elm$core$Debug$log, 'MainPostLog', post);
 					if (msg.$ === 'GotPostWithId') {
 						return A2(
 							$author$project$Main$stepPost,
@@ -7362,6 +7389,9 @@ var $author$project$Page$About$view = function (model) {
 					]))
 			]));
 };
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
 var $elm$core$List$sortBy = _List_sortBy;
 var $author$project$Page$LatestPosts$orderPosts = $elm$core$List$sortBy(
 	function (p) {
@@ -7454,13 +7484,22 @@ var $author$project$Page$LatestPosts$view = function (model) {
 var $author$project$Commons$ContentParser$customStyles = {
 	a: _List_Nil,
 	b: _List_Nil,
-	code: _List_Nil,
+	code: _List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('language-kotlin')
+		]),
 	h1: _List_Nil,
 	h2: _List_Nil,
 	h3: _List_Nil,
 	h4: _List_Nil,
 	i: _List_Nil,
-	img: _List_Nil,
+	img: F2(
+		function (styles, url) {
+			return A2(
+				$elm$core$List$cons,
+				$elm$html$Html$Attributes$src(url),
+				styles);
+		}),
 	li: _List_Nil,
 	p: _List_fromArray(
 		[
@@ -7468,7 +7507,7 @@ var $author$project$Commons$ContentParser$customStyles = {
 		]),
 	pre: _List_fromArray(
 		[
-			$elm$html$Html$Attributes$class('code')
+			$elm$html$Html$Attributes$class('language-kotlin')
 		]),
 	quote: _List_Nil,
 	ul: _List_Nil
@@ -7535,6 +7574,7 @@ var $author$project$Page$Posts$pagination = function (postId) {
 		]);
 };
 var $author$project$Commons$ContentParser$Unordered = {$: 'Unordered'};
+var $elm$html$Html$blockquote = _VirtualDom_node('blockquote');
 var $author$project$Commons$TextDecoration$NoDecorator = {$: 'NoDecorator'};
 var $author$project$Commons$TextDecoration$buildRemainderIntervals = F5(
 	function (intervals, _v0, isFirst, length, accLength) {
@@ -7759,6 +7799,23 @@ var $author$project$Commons$ContentParser$firstOf = F2(
 			}
 		}
 	});
+var $author$project$Commons$ContentParser$getImageUrlFromImgMarkdownTag = function (tag) {
+	return A2(
+		$elm$core$String$dropRight,
+		1,
+		A2(
+			$elm$core$String$dropLeft,
+			1,
+			A2(
+				$elm$core$Maybe$withDefault,
+				'',
+				$elm$core$List$head(
+					A2(
+						$elm$core$Maybe$withDefault,
+						_List_Nil,
+						$elm$core$List$tail(
+							A2($elm$core$String$split, ']', tag)))))));
+};
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$html$Html$h4 = _VirtualDom_node('h4');
@@ -8010,8 +8067,32 @@ var $author$project$Commons$ContentParser$parseMd = F2(
 							styles.p,
 							$author$project$Commons$TextDecoration$buildHtmlText(line)),
 						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
+				case 'IMG':
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$img,
+							A2(
+								styles.img,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('thumbnail-1')
+									]),
+								$author$project$Commons$ContentParser$getImageUrlFromImgMarkdownTag(line)),
+							_List_Nil),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
 				default:
-					return _List_Nil;
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$blockquote,
+							styles.quote,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2($elm$core$String$dropLeft, 1, line))
+								])),
+						A2($author$project$Commons$ContentParser$parseMd, nextLines, styles));
 			}
 		}
 	});
@@ -8077,7 +8158,11 @@ var $author$project$Page$Posts$viewPost = function (model) {
 			var _v1 = model.a;
 			var post = _v1.a;
 			var id = _v1.b;
-			var lines = A2($elm$core$String$split, '\n', post);
+			var lines = A2(
+				$elm$core$Maybe$withDefault,
+				_List_Nil,
+				$elm$core$List$tail(
+					A2($elm$core$String$split, '\n', post)));
 			return A3($author$project$Page$Posts$buildPostBody, lines, false, id);
 		default:
 			var _v2 = model.a;
@@ -8092,7 +8177,8 @@ var $author$project$Page$Posts$view = function (model) {
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px')
+				A2($elm$html$Html$Attributes$style, 'padding', '12px 24px 12px 24px'),
+				$elm$html$Html$Attributes$class('markdown-body')
 			]),
 		$author$project$Page$Posts$viewPost(model));
 };
